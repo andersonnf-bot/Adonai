@@ -1,3 +1,3 @@
 # Meu Primeiro Projeto
 
-Este é meu primiero repositório no GitHub.
+Este é meu primeiro repositório no GitHub.

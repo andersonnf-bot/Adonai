@@ -107,11 +107,12 @@ layout = html.Div([
     Input('filter-ano', 'value'),
     Input('filter-cliente', 'value'),
     Input('filter-produto', 'value'),
-    Input('filter-serie', 'value'),
+    Input('filter-valor-min', 'value'),
+    Input('filter-valor-max', 'value'),
 )
-def update_overview(start_date, end_date, anos, cliente, produto, serie):
+def update_overview(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
     df_all = get_liquid()
-    df = apply_filters(df_all, start_date, end_date, anos, cliente, produto)
+    df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
 
     if serie and serie != 'ALL':
         df = df[df['Serie'] == serie]

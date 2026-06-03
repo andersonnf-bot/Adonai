@@ -523,6 +523,53 @@ html, body {
 .tab--selected { color: var(--primary) !important; border-color: var(--primary) !important; background: var(--surface) !important; }
 .tabs { border-color: var(--border) !important; }
 
+/* ── FILTER TEXT INPUT ── */
+.filter-text-input {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  width: 170px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.filter-text-input:focus { border-color: var(--primary) !important; }
+
+.filter-clear-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.filter-clear-btn:hover {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+/* ── FILTER VALOR INPUT ── */
+.filter-valor-input {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  width: 100px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.filter-valor-input:focus { border-color: var(--primary) !important; }
+
 /* ── MISC ── */
 .mt-4 { margin-top: 16px; }
 .mb-4 { margin-bottom: 16px; }

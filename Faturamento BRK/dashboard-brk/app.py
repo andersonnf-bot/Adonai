@@ -48,6 +48,16 @@ def update_sidebar(pathname):
     return build_navbar(pathname or '/')
 
 
+# Botão ✕ limpa o campo de busca de cliente
+@callback(
+    Output('filter-cliente', 'value'),
+    Input('btn-clear-cliente', 'n_clicks'),
+    prevent_initial_call=True,
+)
+def clear_cliente(_):
+    return ''
+
+
 if __name__ == '__main__':
     print('\n' + '='*60)
     print('  BRK Analytics Platform · Nstech Group')

@@ -76,25 +76,22 @@ layout = html.Div([
     Input('filter-ano', 'value'),
     Input('filter-cliente', 'value'),
     Input('filter-produto', 'value'),
-    Input('filter-serie', 'value'),
+    Input('filter-valor-min', 'value'),
+    Input('filter-valor-max', 'value'),
 )
-def update_tendencias(start_date, end_date, anos, cliente, produto, serie):
+def update_tendencias(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
     df_all = get_liquid()
-    df = apply_filters(df_all, start_date, end_date, anos, cliente, produto)
-    if serie and serie != 'ALL':
-        df = df[df['Serie'] == serie]
+    df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
 
     empty = go.Figure()
     empty.update_layout(title='Sem dados suficientes', height=300)
 
     # ── Série histórica completa (sem filtro de data para mostrar tudo) ──
     df_hist = get_liquid()
-    if cliente:
-        df_hist = df_hist[df_hist['Nome'].str.contains(cliente.upper(), na=False)]
-    if produto:
-        df_hist = df_hist[df_hist['Descricao'].str.contains(produto.upper(), na=False)]
-    if serie and serie != 'ALL':
-        df_hist = df_hist[df_hist['Serie'] == serie]
+    if cliente and isinstance(cliente, str) and cliente.strip():
+        df_hist = df_hist[df_hist['Nome'].str.contains(cliente.strip().upper(), na=False)]
+    if produto and isinstance(produto, list) and len(produto) > 0:
+        df_hist = df_hist[df_hist['Descricao'].isin(produto)]
 
     monthly_hist = df_hist.groupby('AnoMesStr')['Vlr.Total'].sum().sort_index()
     months = list(range(len(monthly_hist)))

@@ -92,11 +92,12 @@ def _compute_status(row, now):
     Input('filter-ano', 'value'),
     Input('filter-cliente', 'value'),
     Input('filter-produto', 'value'),
-    Input('filter-serie', 'value'),
+    Input('filter-valor-min', 'value'),
+    Input('filter-valor-max', 'value'),
 )
-def update_table(start_date, end_date, anos, cliente, produto, serie):
+def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
     df_all = get_liquid()
-    df = apply_filters(df_all, start_date, end_date, anos, cliente, produto)
+    df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
     if serie and serie != 'ALL':
         df = df[df['Serie'] == serie]
 
@@ -170,9 +171,10 @@ def update_table(start_date, end_date, anos, cliente, produto, serie):
     Input('filter-ano', 'value'),
     Input('filter-cliente', 'value'),
     Input('filter-produto', 'value'),
-    Input('filter-serie', 'value'),
+    Input('filter-valor-min', 'value'),
+    Input('filter-valor-max', 'value'),
 )
-def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, produto, serie):
+def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, produto, valor_min, valor_max):
     if not active_cell or not table_data:
         return html.Div(
             '👆 Clique em um cliente na tabela para ver análise detalhada.',
@@ -183,7 +185,7 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, 
     nome = row['Cliente'].replace(' ✨', '').strip()
 
     df_all = get_liquid()
-    df_base = apply_filters(df_all, start_date, end_date, anos, None, produto)
+    df_base = apply_filters(df_all, start_date, end_date, anos, None, produto, valor_min, valor_max)
     if serie and serie != 'ALL':
         df_base = df_base[df_base['Serie'] == serie]
 

@@ -72,11 +72,12 @@ layout = html.Div([
     Input('filter-ano', 'value'),
     Input('filter-cliente', 'value'),
     Input('filter-produto', 'value'),
-    Input('filter-serie', 'value'),
+    Input('filter-valor-min', 'value'),
+    Input('filter-valor-max', 'value'),
 )
-def update_produtos(start_date, end_date, anos, cliente, produto, serie):
+def update_produtos(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
     df_all = get_liquid()
-    df = apply_filters(df_all, start_date, end_date, anos, cliente, produto)
+    df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
     if serie and serie != 'ALL':
         df = df[df['Serie'] == serie]
 
@@ -203,9 +204,10 @@ def update_produtos(start_date, end_date, anos, cliente, produto, serie):
     Input('filter-date', 'end_date'),
     Input('filter-ano', 'value'),
     Input('filter-cliente', 'value'),
-    Input('filter-serie', 'value'),
+    Input('filter-valor-min', 'value'),
+    Input('filter-valor-max', 'value'),
 )
-def update_produto_detail(active_cell, table_data, start_date, end_date, anos, cliente, serie):
+def update_produto_detail(active_cell, table_data, start_date, end_date, anos, cliente, valor_min, valor_max):
     if not active_cell or not table_data:
         return html.Div(
             '👆 Clique em um serviço na tabela para análise detalhada.',
@@ -216,7 +218,7 @@ def update_produto_detail(active_cell, table_data, start_date, end_date, anos, c
     servico = row['Serviço']
 
     df_all = get_liquid()
-    df_base = apply_filters(df_all, start_date, end_date, anos, cliente, None)
+    df_base = apply_filters(df_all, start_date, end_date, anos, cliente, None, valor_min, valor_max)
     if serie and serie != 'ALL':
         df_base = df_base[df_base['Serie'] == serie]
 

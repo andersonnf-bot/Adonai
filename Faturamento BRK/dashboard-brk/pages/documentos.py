@@ -109,18 +109,15 @@ layout = html.Div([
     Input('filter-ano', 'value'),
     Input('filter-cliente', 'value'),
     Input('filter-produto', 'value'),
-    Input('filter-serie', 'value'),
+    Input('filter-valor-min', 'value'),
+    Input('filter-valor-max', 'value'),
 )
-def update_documentos(start_date, end_date, anos, cliente, produto, serie_filter):
+def update_documentos(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
     df_raw, df_liquid = load_data()
 
-    df_raw_f = apply_filters(df_raw, start_date, end_date, anos, cliente, produto)
-    df_liq_f = apply_filters(df_liquid, start_date, end_date, anos, cliente, produto)
-
-    if serie_filter and serie_filter != 'ALL':
-        df_show = df_raw_f[df_raw_f['Serie'] == serie_filter]
-    else:
-        df_show = df_raw_f
+    df_raw_f = apply_filters(df_raw, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
+    df_liq_f = apply_filters(df_liquid, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
+    df_show = df_raw_f
 
     # ── KPIs ──
     from components.kpis import kpi_card, kpi_grid

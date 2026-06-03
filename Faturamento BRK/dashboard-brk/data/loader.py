@@ -67,26 +67,37 @@ def get_liquid():
     return df
 
 
-def apply_filters(df, date_start=None, date_end=None, anos=None, cliente=None, produto=None):
+def apply_filters(df, date_start=None, date_end=None, anos=None,
+                  cliente=None, produto=None, valor_min=None, valor_max=None):
     mask = pd.Series(True, index=df.index)
+
     if date_start:
         mask &= df['Emissao'] >= pd.to_datetime(date_start)
     if date_end:
         mask &= df['Emissao'] <= pd.to_datetime(date_end)
     if anos:
         mask &= df['Ano'].isin([int(a) for a in anos])
-    # cliente: aceita string (busca parcial) ou lista (multi-select exato)
-    if cliente:
-        if isinstance(cliente, list):
-            mask &= df['Nome'].isin(cliente)
-        elif isinstance(cliente, str) and cliente.strip():
-            mask &= df['Nome'].str.contains(cliente.strip().upper(), na=False)
-    # produto: aceita string (busca parcial) ou lista (multi-select exato)
+
+    # cliente: string = busca parcial | vazio/None = todos
+    if cliente and isinstance(cliente, str) and cliente.strip():
+        mask &= df['Nome'].str.contains(cliente.strip().upper(), na=False)
+
+    # produto: lista multi-select (vazia = todos)
     if produto:
-        if isinstance(produto, list):
+        if isinstance(produto, list) and len(produto) > 0:
             mask &= df['Descricao'].isin(produto)
         elif isinstance(produto, str) and produto.strip():
             mask &= df['Descricao'].str.contains(produto.strip().upper(), na=False)
+
+    # range de faturamento por cliente total (filtra clientes pelo total acumulado)
+    if valor_min is not None or valor_max is not None:
+        client_totals = df[mask].groupby('Nome')['Vlr.Total'].sum()
+        if valor_min is not None and valor_min > 0:
+            client_totals = client_totals[client_totals >= float(valor_min)]
+        if valor_max is not None and valor_max > 0:
+            client_totals = client_totals[client_totals <= float(valor_max)]
+        mask &= df['Nome'].isin(client_totals.index)
+
     return df[mask]
 
 

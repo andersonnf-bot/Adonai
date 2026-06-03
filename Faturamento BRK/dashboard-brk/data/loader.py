@@ -97,6 +97,13 @@ _GENERIC_PREFIXES = {
     'MARTINI',      # MARTINI MEAT (armazéns) != MARTINI TRANSPORTES
     'SS',           # SS TRANSPORTES LTDA ME != SS TRANSPORTES RIO PRETO
     'HORIZONTE',    # HORIZONTE JR (logística) != HORIZONTE TRANSPORTES
+    # ── Identificados no double-check 2 ──
+    'TRANSP',       # abreviação genérica: TRANSP ZAPPELLINI != TRANSP TEIXEIRA != TRANSP TOZZO
+    'DIRECT',       # DIRECT EXPRESS LOGISTICA != DIRECT TRANSPORTE ARMAZENS (empresas distintas)
+    'RIO',          # RIO BRANCO (alimentícios) != RIO EXPRESS (cargas) != RIO LOG EXPRESS
+    'ALESSANDRO',   # ALESSANDRO EUSTAQUIO (pessoa) != ALESSANDRO TRANSPORTES (empresa)
+    'LUSA',         # LUSA TRANSPORTES E MANUTENCOES != LUSA TRANSPORTES E REPRESENTACOES
+    'R&R',          # R&R DIESEL TRANSPORTES != R&R ISA'S TRANSPORTES (donos diferentes)
 }
 
 

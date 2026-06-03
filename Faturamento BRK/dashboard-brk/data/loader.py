@@ -104,6 +104,9 @@ _GENERIC_PREFIXES = {
     'ALESSANDRO',   # ALESSANDRO EUSTAQUIO (pessoa) != ALESSANDRO TRANSPORTES (empresa)
     'LUSA',         # LUSA TRANSPORTES E MANUTENCOES != LUSA TRANSPORTES E REPRESENTACOES
     'R&R',          # R&R DIESEL TRANSPORTES != R&R ISA'S TRANSPORTES (donos diferentes)
+    # ── Identificados pelo critério do segundo nome ──
+    'VIANA',        # VIANA E GRACIERI (sócios) != VIANA E VIANA (sócios diferentes)
+    'DDC',          # DDC CORDEIRO (Goianinha) != DDC SERVICOS DE ENTREGA (Mossoró) — 2o nome e cidade distintos
 }
 
 

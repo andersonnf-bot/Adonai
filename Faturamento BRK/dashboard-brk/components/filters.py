@@ -1,12 +1,13 @@
 from dash import html, dcc
-from data.loader import get_date_bounds, get_anos, get_all_products
+from data.loader import get_date_bounds, get_anos, get_all_clients, get_all_products
 
 _DROP = {'fontSize': '12px'}
 
 
 def build_filter_bar():
     min_date, max_date = get_date_bounds()
-    anos = get_anos()
+    anos     = get_anos()
+    clientes = get_all_clients()
     produtos = get_all_products()
 
     return html.Div(
@@ -42,28 +43,23 @@ def build_filter_bar():
                 ),
             ], className='filter-group'),
 
-            # ── Cliente — busca livre + limpar ──
+            # ── Cliente — autocomplete com sugestões conforme digitação ──
             html.Div([
                 html.Span('Cliente', className='filter-label'),
-                html.Div([
-                    dcc.Input(
-                        id='filter-cliente',
-                        type='text',
-                        placeholder='Buscar cliente...',
-                        debounce=True,
-                        className='filter-text-input',
-                    ),
-                    html.Button(
-                        '✕',
-                        id='btn-clear-cliente',
-                        n_clicks=0,
-                        className='filter-clear-btn',
-                        title='Limpar filtro',
-                    ),
-                ], style={'display': 'flex', 'alignItems': 'center', 'gap': '4px'}),
+                dcc.Dropdown(
+                    id='filter-cliente',
+                    options=[{'label': c.title(), 'value': c} for c in clientes],
+                    multi=True,
+                    searchable=True,
+                    clearable=True,
+                    placeholder='Digite para buscar...',
+                    style={'minWidth': '220px', 'maxWidth': '320px', **_DROP},
+                    maxHeight=280,
+                    optionHeight=32,
+                ),
             ], className='filter-group'),
 
-            # ── Serviço — dropdown multi-select igual ao Ano ──
+            # ── Serviço — dropdown multi-select pesquisável ──
             html.Div([
                 html.Span('Serviço', className='filter-label'),
                 dcc.Dropdown(

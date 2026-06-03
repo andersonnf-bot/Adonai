@@ -78,9 +78,12 @@ def apply_filters(df, date_start=None, date_end=None, anos=None,
     if anos:
         mask &= df['Ano'].isin([int(a) for a in anos])
 
-    # cliente: string = busca parcial | vazio/None = todos
-    if cliente and isinstance(cliente, str) and cliente.strip():
-        mask &= df['Nome'].str.contains(cliente.strip().upper(), na=False)
+    # cliente: lista = multi-select exato | string = busca parcial | vazio/None = todos
+    if cliente:
+        if isinstance(cliente, list) and len(cliente) > 0:
+            mask &= df['Nome'].isin(cliente)
+        elif isinstance(cliente, str) and cliente.strip():
+            mask &= df['Nome'].str.contains(cliente.strip().upper(), na=False)
 
     # produto: lista multi-select (vazia = todos)
     if produto:

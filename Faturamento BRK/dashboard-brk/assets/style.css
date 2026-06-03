@@ -478,42 +478,86 @@ html, body {
 }
 .DateRangePickerInput_arrow { color: var(--text-muted) !important; }
 
-/* Calendário menor e dark */
+/* Calendário compacto e dark — sem quadrados brancos */
 .DateRangePicker_picker {
   transform: scale(0.82);
   transform-origin: top left;
   z-index: 9999 !important;
-}
-.CalendarDay__default {
   background: var(--surface) !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+/* TODOS os estados de dia — fundo escuro */
+.CalendarDay,
+.CalendarDay__default,
+.CalendarDay__blocked_calendar,
+.CalendarDay__blocked_out_of_range,
+.CalendarDay__blocked_out_of_range:active,
+.CalendarDay__blocked_out_of_range:hover,
+td.CalendarDay {
+  background: var(--surface) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border) !important;
   font-size: 11px !important;
 }
-.CalendarDay__selected, .CalendarDay__selected:hover {
+.CalendarDay__default:hover {
+  background: var(--surface2) !important;
+  color: var(--text) !important;
+}
+.CalendarDay__blocked_out_of_range,
+.CalendarDay__blocked_out_of_range:hover {
+  color: var(--text-muted) !important;
+  opacity: 0.4;
+}
+.CalendarDay__selected,
+.CalendarDay__selected:active,
+.CalendarDay__selected:hover {
   background: var(--primary) !important;
   border-color: var(--primary) !important;
   color: #fff !important;
 }
-.CalendarDay__selected_span {
-  background: rgba(255,101,0,0.2) !important;
+.CalendarDay__selected_span,
+.CalendarDay__selected_span:active,
+.CalendarDay__selected_span:hover {
+  background: rgba(255,101,0,0.18) !important;
+  border-color: rgba(255,101,0,0.25) !important;
+  color: var(--text) !important;
+}
+.CalendarDay__hovered_span,
+.CalendarDay__hovered_span:hover {
+  background: rgba(255,101,0,0.10) !important;
+  color: var(--text) !important;
+}
+
+/* Container do calendário */
+.DayPicker,
+.DayPicker__withBorder {
+  background: var(--surface) !important;
   border-color: var(--border) !important;
-  color: var(--text) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+  border-radius: 8px !important;
 }
-.CalendarDay__hovered_span, .CalendarDay__hovered_span:hover {
-  background: rgba(255,101,0,0.12) !important;
-  color: var(--text) !important;
-}
-.DayPicker { background: var(--surface) !important; border-color: var(--border) !important; }
 .DayPickerNavigation_button {
   background: var(--surface2) !important;
   border-color: var(--border) !important;
+  color: var(--text) !important;
+  border-radius: 4px !important;
 }
-.CalendarMonth { background: var(--surface) !important; }
-.CalendarMonth_caption { color: var(--text) !important; font-size: 13px !important; }
-.CalendarMonthGrid { background: var(--surface) !important; }
-.DayPickerKeyboardShortcuts_show__bottomRight::before { border-right-color: var(--primary) !important; }
+.DayPickerNavigation_button:hover { background: var(--border) !important; }
+.DayPickerNavigation_svg__horizontal { fill: var(--text-secondary) !important; }
+
+.CalendarMonth,
+.CalendarMonthGrid,
+.CalendarMonthGrid__animating { background: var(--surface) !important; }
+.CalendarMonth_caption { color: var(--text) !important; font-size: 13px !important; font-weight: 600; }
 .DayPicker_weekHeader { color: var(--text-muted) !important; font-size: 10px !important; }
+.DayPicker_weekHeader_li small { color: var(--text-muted) !important; }
+
+/* Botão de atalhos do teclado */
+.DayPickerKeyboardShortcuts_show__bottomRight { display: none !important; }
+.KeyboardShortcutRow { display: none !important; }
 
 /* ── LOADING ── */
 ._dash-loading { color: var(--primary) !important; }

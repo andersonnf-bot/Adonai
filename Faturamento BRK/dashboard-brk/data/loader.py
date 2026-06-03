@@ -75,10 +75,18 @@ def apply_filters(df, date_start=None, date_end=None, anos=None, cliente=None, p
         mask &= df['Emissao'] <= pd.to_datetime(date_end)
     if anos:
         mask &= df['Ano'].isin([int(a) for a in anos])
+    # cliente: aceita string (busca parcial) ou lista (multi-select exato)
     if cliente:
-        mask &= df['Nome'].str.contains(cliente.upper(), na=False)
+        if isinstance(cliente, list):
+            mask &= df['Nome'].isin(cliente)
+        elif isinstance(cliente, str) and cliente.strip():
+            mask &= df['Nome'].str.contains(cliente.strip().upper(), na=False)
+    # produto: aceita string (busca parcial) ou lista (multi-select exato)
     if produto:
-        mask &= df['Descricao'].str.contains(produto.upper(), na=False)
+        if isinstance(produto, list):
+            mask &= df['Descricao'].isin(produto)
+        elif isinstance(produto, str) and produto.strip():
+            mask &= df['Descricao'].str.contains(produto.strip().upper(), na=False)
     return df[mask]
 
 

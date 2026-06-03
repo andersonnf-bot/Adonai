@@ -1,5 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+/* ── ZOOM GLOBAL 85% ── */
+html { zoom: 0.85; }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -459,9 +462,58 @@ html, body {
   border-color: var(--border) !important;
 }
 
-/* ── DATE PICKER DARK ── */
-.DateInput_input { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
-.DateRangePickerInput { background: var(--surface2) !important; border-color: var(--border) !important; }
+/* ── DATE PICKER — dark + compacto ── */
+.DateInput_input {
+  background: var(--surface2) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+  font-size: 11px !important;
+  padding: 4px 6px !important;
+  width: 88px !important;
+}
+.DateRangePickerInput {
+  background: var(--surface2) !important;
+  border-color: var(--border) !important;
+  border-radius: 6px !important;
+}
+.DateRangePickerInput_arrow { color: var(--text-muted) !important; }
+
+/* Calendário menor e dark */
+.DateRangePicker_picker {
+  transform: scale(0.82);
+  transform-origin: top left;
+  z-index: 9999 !important;
+}
+.CalendarDay__default {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+  font-size: 11px !important;
+}
+.CalendarDay__selected, .CalendarDay__selected:hover {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #fff !important;
+}
+.CalendarDay__selected_span {
+  background: rgba(255,101,0,0.2) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+.CalendarDay__hovered_span, .CalendarDay__hovered_span:hover {
+  background: rgba(255,101,0,0.12) !important;
+  color: var(--text) !important;
+}
+.DayPicker { background: var(--surface) !important; border-color: var(--border) !important; }
+.DayPickerNavigation_button {
+  background: var(--surface2) !important;
+  border-color: var(--border) !important;
+}
+.CalendarMonth { background: var(--surface) !important; }
+.CalendarMonth_caption { color: var(--text) !important; font-size: 13px !important; }
+.CalendarMonthGrid { background: var(--surface) !important; }
+.DayPickerKeyboardShortcuts_show__bottomRight::before { border-right-color: var(--primary) !important; }
+.DayPicker_weekHeader { color: var(--text-muted) !important; font-size: 10px !important; }
 
 /* ── LOADING ── */
 ._dash-loading { color: var(--primary) !important; }

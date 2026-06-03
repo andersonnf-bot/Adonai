@@ -98,8 +98,6 @@ def _compute_status(row, now):
 def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
     df_all = get_liquid()
     df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
-    if serie and serie != 'ALL':
-        df = df[df['Serie'] == serie]
 
     if df.empty:
         return [], []
@@ -186,8 +184,6 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, 
 
     df_all = get_liquid()
     df_base = apply_filters(df_all, start_date, end_date, anos, None, produto, valor_min, valor_max)
-    if serie and serie != 'ALL':
-        df_base = df_base[df_base['Serie'] == serie]
 
     df_cli = df_base[df_base['Nome'] == nome]
     if df_cli.empty:

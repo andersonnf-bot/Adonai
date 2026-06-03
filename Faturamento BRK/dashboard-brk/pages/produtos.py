@@ -78,8 +78,6 @@ layout = html.Div([
 def update_produtos(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
     df_all = get_liquid()
     df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
-    if serie and serie != 'ALL':
-        df = df[df['Serie'] == serie]
 
     if df.empty:
         empty_fig = go.Figure()
@@ -219,8 +217,6 @@ def update_produto_detail(active_cell, table_data, start_date, end_date, anos, c
 
     df_all = get_liquid()
     df_base = apply_filters(df_all, start_date, end_date, anos, cliente, None, valor_min, valor_max)
-    if serie and serie != 'ALL':
-        df_base = df_base[df_base['Serie'] == serie]
 
     df_svc = df_base[df_base['Descricao'] == servico]
     if df_svc.empty:

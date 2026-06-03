@@ -114,8 +114,6 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     df_all = get_liquid()
     df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
 
-    if serie and serie != 'ALL':
-        df = df[df['Serie'] == serie]
 
     # ── KPIs ──
     receita_total = df['Vlr.Total'].sum()

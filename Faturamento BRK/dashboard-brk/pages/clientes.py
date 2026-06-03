@@ -104,7 +104,7 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
 
     now = df['Emissao'].max()
 
-    monthly = df.groupby(['Nome', 'AnoMesStr'])['Vlr.Total'].sum().unstack(fill_value=0)
+    monthly = df.groupby(['GrupoEcon', 'AnoMesStr'])['Vlr.Total'].sum().unstack(fill_value=0)
     months_sorted = sorted(monthly.columns)
     monthly = monthly[months_sorted]
 
@@ -118,8 +118,8 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
     ).reset_index()
 
     if len(months_sorted) >= 2:
-        agg['ult_mes'] = agg['Nome'].map(monthly[months_sorted[-1]])
-        agg['pen_mes'] = agg['Nome'].map(monthly[months_sorted[-2]])
+        agg['ult_mes'] = agg['GrupoEcon'].map(monthly[months_sorted[-1]])
+        agg['pen_mes'] = agg['GrupoEcon'].map(monthly[months_sorted[-2]])
         agg['var_mom'] = ((agg['ult_mes'] - agg['pen_mes']) / agg['pen_mes'].replace(0, np.nan) * 100)
     else:
         agg['ult_mes'] = agg['receita']

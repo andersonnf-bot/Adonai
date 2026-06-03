@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: brk-analytics
+    runtime: python
+    rootDir: Faturamento BRK/dashboard-brk
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:server --workers 1 --timeout 120 --bind 0.0.0.0:$PORT
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0

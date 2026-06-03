@@ -6,14 +6,20 @@ import glob
 EXCLUDE_SERIES = {'RET', 'DAV'}
 
 def _find_data_file():
-    base = Path(__file__).parent.parent.parent
-    xlsx_files = [
-        f for f in base.glob('*.xlsx')
-        if not f.name.startswith('~$')
+    # Busca em ordem de prioridade: pasta data/ local, pasta pai (local Windows), raiz do projeto
+    search_paths = [
+        Path(__file__).parent,           # dashboard-brk/data/  (cloud / Render)
+        Path(__file__).parent.parent.parent,  # Faturamento BRK/     (Windows local)
+        Path(__file__).parent.parent,    # dashboard-brk/       (fallback)
     ]
-    if not xlsx_files:
-        raise FileNotFoundError(f'Nenhum arquivo .xlsx encontrado em {base}')
-    return max(xlsx_files, key=lambda f: f.stat().st_mtime)
+    for base in search_paths:
+        xlsx_files = [
+            f for f in base.glob('*.xlsx')
+            if not f.name.startswith('~$')
+        ]
+        if xlsx_files:
+            return max(xlsx_files, key=lambda f: f.stat().st_mtime)
+    raise FileNotFoundError('Nenhum arquivo .xlsx encontrado. Verifique a pasta de dados.')
 
 def _find_sheet(xl):
     for name in xl.sheet_names:

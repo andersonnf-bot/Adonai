@@ -7,28 +7,71 @@ EXCLUDE_SERIES = {'RET', 'DAV'}
 
 # Palavras genéricas do setor que NÃO identificam uma marca/grupo
 _GENERIC_PREFIXES = {
-    # Transporte / logística
+    # ── Setor transporte / logística (palavras genéricas) ──
     'TRANSPORTES', 'TRANSPORTADORA', 'TRANSPORTE', 'TRANS',
-    'EXPRESSO', 'EXPRESSO.', 'RODOVIARIO', 'RODOVIARIOS',
-    'RODO', 'RODOTRANSPORTE', 'FRETE',
+    'EXPRESSO', 'RODOVIARIO', 'RODOVIARIOS', 'RODO', 'RODOTRANSPORTE', 'FRETE',
     'LOGISTICA', 'LOG', 'LOGISTIC', 'LOGISTICS',
     'RAPIDO', 'RAPIDOS', 'VELOZ', 'SPEED',
-    # Cooperativas genéricas
+    # ── Cooperativas ──
     'COOPERATIVA', 'COOP',
-    # Palavras societárias / comerciais
+    # ── Palavras societárias / comerciais genéricas ──
     'EMPRESA', 'EMPRESAS', 'GRUPO', 'GRUPOS', 'HOLDING',
     'COMERCIO', 'COMERCIAL', 'INDUSTRIA', 'INDUSTRIAS',
     'SERVICOS', 'SERVICO', 'SOLUCOES', 'SOLUCAO',
-    # Geográficos genéricos
+    'COMPANHIA', 'CIA',  # CIA BRASILEIRA DE LITIO != CIA DE MET
+    # ── Geográficos genéricos ──
     'BRASIL', 'NACIONAL', 'REGIONAL', 'NORTE', 'SUL', 'LESTE', 'OESTE',
     'NOVA', 'NOVO', 'INTER', 'SUPER', 'MEGA', 'MULTI',
-    # Letras isoladas e siglas comuns de iniciação
+    'SAO', 'SÃO', 'VALE', 'CENTRO', 'CENTRAL',
+    # ── Letras isoladas e siglas ambíguas ──
     *[chr(c) for c in range(ord('A'), ord('Z') + 1)],
-    # Nomes próprios frequentes de MEI/individual
+    # ── Nomes próprios frequentes (MEI / individual) ──
     'ANTONIO', 'JOSE', 'JOAO', 'CARLOS', 'PAULO', 'PEDRO',
     'MARIA', 'LUIZ', 'LUIS', 'ROBERTO', 'FRANCISCO', 'ANDRE',
     'MARCOS', 'MARCIO', 'FABIO', 'DANIEL', 'RAFAEL', 'LUCAS',
-    'FAST',  # FAST SHOP != FAST FRIOS != FAST SOLUTION
+    'LEANDRO', 'RODRIGO', 'THIAGO', 'NELSON', 'ANA', 'ALEX',
+    'JAIR', 'JAIRO', 'FERNANDO', 'WELLINGTON', 'WILLIAN', 'MILTON',
+    # ── Prefixos que geram agrupamentos incorretos ──
+    # (empresas diferentes com mesma primeira palavra)
+    'SOUZA',        # SOUZA CRUZ (tabaco) != SOUZA BARROS (transportes)
+    'TCL',          # TCL SEMP (eletronicos) != TCL TRANSPORTE RODOVIARIO
+    'OPEN',         # OPEN TECH (sistemas) != OPEN TRANSPORTES
+    'GLOBAL',       # várias empresas GLOBAL sem relação
+    'CARGO',        # CARGO MODAL != CARGO POLO
+    'COSTA',        # 5 transportadoras diferentes com COSTA
+    'RG',           # RG LOG != RG MASTER REPRESENTACOES
+    'KM',           # KM CARGO != KM LOCACAO
+    'ID',           # ID ARMAZENS != ID DO BRASIL
+    'TK',           # TK LOGISTICA != TK TRANSPORTES
+    'SILVA',        # nomes de família — empresas diferentes
+    'MS',           # sigla ambígua — múltiplas empresas
+    'ALL',          # ALL SUCATAS != ALL WASHED
+    'VIA',          # 4 empresas diferentes com VIA
+    'ALIANCA',      # ALIANCA CONTAINERS != ALIANCA NAVEGACAO != ALIANCA SERVICOS
+    'IRMAOS',       # nomes de família — empresas diferentes
+    'ECO',          # ECO ARMAZENS != ECO CARGO != ECO RAPIDO
+    'PORTAL',       # PORTAL CARGO != PORTAL TRANSPORTES
+    'TRUCK',        # TRUCK FENIX != TRUCK X
+    'BCR',          # BCR CONTAINERES != BCR TRANSPORTES
+    'RM',           # 4 empresas RM diferentes
+    'LOGIC',        # LOGIC PHARMA != LOGIC SOLUCOES
+    'RF',           # RF LOGISTICA != RF TRANSPORTES
+    'GETLAR',       # GETLAR MOVEIS != GETLAR TRANSPORTE
+    'CARGOX',       # pode ser mesma marca mas incerto
+    'POLI',         # POLI LOGISTICA != POLI TRANSPORTES
+    'KAIZEN',       # KAIZEN CARGO != KAIZEN LOGISTICA
+    'GN',           # GN LOGISTICA != GN SERVICOS
+    'DL',           # DL CARGO != DL LOGISTICA
+    'TRES',         # TRES AMERICAS != TRES TRANSPORTES
+    'FAST',         # FAST SHOP != FAST FRIOS != FAST SOLUTION
+    'CASA',         # CASA CARDAO != CASA DA BOIA != CASA LIMPA
+    'MARTINS',      # MARTINS COMERCIO (distribuidor) != MARTINS SILVESTRE
+    'ORANGE',       # ORANGE CARGO != ORANGE LOGISTICA
+    'AUTO',         # várias AUTO VIACAO sem relação
+    'EURO',         # EURO PRUDENTE != EURO TRANSPORTES
+    'CONCEITO',     # CONCEITO TRANSPORTES EIRELI != CONCEITO TRANSPORTES LOCACAO
+    'DALLA',        # DALLA VALLE != DALLA VECCHIA
+    'WINGS',        # WINGS TRANSPORTADORA != WINGS TRANSPORTES BRASIL
 }
 
 

@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, callback, Input, Output
+from dash import html, dcc, callback, Input, Output, State, ClientsideFunction
 import dash_bootstrap_components as dbc
 
 from components.theme import COLORS
@@ -46,6 +46,41 @@ app.layout = html.Div(
 )
 def update_sidebar(pathname):
     return build_navbar(pathname or '/')
+
+
+# ── Formata campo Mín ao sair do campo (on blur) ──
+app.clientside_callback(
+    """
+    function(n_blur, value) {
+        if (!value || value.toString().trim() === '') return '';
+        var raw = value.toString().replace(/[^0-9,]/g, '').replace(',', '.');
+        var num = parseFloat(raw);
+        if (isNaN(num)) return value;
+        return num.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    }
+    """,
+    Output('filter-valor-min', 'value'),
+    Input('filter-valor-min', 'n_blur'),
+    State('filter-valor-min', 'value'),
+    prevent_initial_call=True,
+)
+
+# ── Formata campo Máx ao sair do campo (on blur) ──
+app.clientside_callback(
+    """
+    function(n_blur, value) {
+        if (!value || value.toString().trim() === '') return '';
+        var raw = value.toString().replace(/[^0-9,]/g, '').replace(',', '.');
+        var num = parseFloat(raw);
+        if (isNaN(num)) return value;
+        return num.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    }
+    """,
+    Output('filter-valor-max', 'value'),
+    Input('filter-valor-max', 'n_blur'),
+    State('filter-valor-max', 'value'),
+    prevent_initial_call=True,
+)
 
 
 

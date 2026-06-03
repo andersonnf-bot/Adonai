@@ -67,6 +67,20 @@ def get_liquid():
     return df
 
 
+def _parse_valor(v):
+    """Converte string formatada em pt-BR (ex: '1.500.000') para float."""
+    if v is None or str(v).strip() == '':
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    # Remove R$, espaços, pontos de milhar; troca vírgula decimal por ponto
+    cleaned = str(v).replace('R$', '').replace(' ', '').replace('.', '').replace(',', '.')
+    try:
+        return float(cleaned)
+    except (ValueError, TypeError):
+        return None
+
+
 def apply_filters(df, date_start=None, date_end=None, anos=None,
                   cliente=None, produto=None, valor_min=None, valor_max=None):
     mask = pd.Series(True, index=df.index)
@@ -93,12 +107,14 @@ def apply_filters(df, date_start=None, date_end=None, anos=None,
             mask &= df['Descricao'].str.contains(produto.strip().upper(), na=False)
 
     # range de faturamento por cliente total (filtra clientes pelo total acumulado)
-    if valor_min is not None or valor_max is not None:
+    vmin = _parse_valor(valor_min)
+    vmax = _parse_valor(valor_max)
+    if vmin is not None or vmax is not None:
         client_totals = df[mask].groupby('Nome')['Vlr.Total'].sum()
-        if valor_min is not None and valor_min > 0:
-            client_totals = client_totals[client_totals >= float(valor_min)]
-        if valor_max is not None and valor_max > 0:
-            client_totals = client_totals[client_totals <= float(valor_max)]
+        if vmin is not None and vmin > 0:
+            client_totals = client_totals[client_totals >= vmin]
+        if vmax is not None and vmax > 0:
+            client_totals = client_totals[client_totals <= vmax]
         mask &= df['Nome'].isin(client_totals.index)
 
     return df[mask]

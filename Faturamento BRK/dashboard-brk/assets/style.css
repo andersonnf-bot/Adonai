@@ -454,13 +454,75 @@ html, body {
   letter-spacing: 0.5px;
 }
 
-/* ── DROPDOWN DARK OVERRIDE ── */
+/* ── DROPDOWN DARK OVERRIDE — todos os dropdowns Dash ── */
 .Select-control, .VirtualizedSelectFocusedOption,
 .Select-menu-outer, .Select-option {
   background-color: var(--surface2) !important;
   color: var(--text) !important;
   border-color: var(--border) !important;
 }
+
+/* Controle principal do dropdown */
+.dash-dropdown .Select-control {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  min-height: 32px !important;
+  cursor: text !important;
+}
+.dash-dropdown .Select-control:hover { border-color: var(--primary) !important; }
+
+/* Placeholder e valores */
+.dash-dropdown .Select-placeholder { color: var(--text-muted) !important; font-size: 12px !important; }
+.dash-dropdown .Select-value-label { color: var(--text-secondary) !important; font-size: 12px !important; }
+.dash-dropdown .Select-input input  { color: var(--text) !important; font-size: 12px !important; background: transparent !important; }
+
+/* Seta e X de limpar */
+.dash-dropdown .Select-arrow { border-top-color: var(--text-muted) !important; }
+.dash-dropdown .Select-clear { color: var(--text-muted) !important; font-size: 16px !important; }
+.dash-dropdown .Select-clear:hover { color: var(--danger) !important; }
+
+/* Menu suspenso */
+.dash-dropdown .Select-menu-outer {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+  z-index: 9999 !important;
+  margin-top: 4px !important;
+}
+.dash-dropdown .Select-option {
+  background: var(--surface2) !important;
+  color: var(--text-secondary) !important;
+  font-size: 12px !important;
+  padding: 8px 12px !important;
+}
+.dash-dropdown .Select-option:hover,
+.dash-dropdown .Select-option.is-focused {
+  background: rgba(255,101,0,0.12) !important;
+  color: var(--text) !important;
+}
+.dash-dropdown .Select-option.is-selected {
+  background: rgba(255,101,0,0.2) !important;
+  color: var(--primary) !important;
+  font-weight: 600 !important;
+}
+
+/* Tags de valores selecionados (multi) */
+.dash-dropdown .Select-value {
+  background: rgba(255,101,0,0.15) !important;
+  border: 1px solid rgba(255,101,0,0.3) !important;
+  border-radius: 4px !important;
+  color: var(--primary) !important;
+  font-size: 11px !important;
+  margin: 2px !important;
+}
+.dash-dropdown .Select-value-icon {
+  color: var(--primary) !important;
+  border-right: 1px solid rgba(255,101,0,0.3) !important;
+  padding: 2px 5px !important;
+}
+.dash-dropdown .Select-value-icon:hover { background: var(--danger) !important; color: #fff !important; }
 
 /* ── DATE PICKER — dark + compacto ── */
 .DateInput_input {
@@ -477,6 +539,14 @@ html, body {
   border-radius: 6px !important;
 }
 .DateRangePickerInput_arrow { color: var(--text-muted) !important; }
+
+/* Remove os ícones brancos de calendário ao lado das datas */
+.DateInput_calendarIcon {
+  display: none !important;
+}
+.DateInput {
+  background: transparent !important;
+}
 
 /* Calendário compacto e dark — sem quadrados brancos */
 .DateRangePicker_picker {

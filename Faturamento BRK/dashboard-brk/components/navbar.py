@@ -31,7 +31,14 @@ def build_navbar(pathname='/'):
         children=[
             html.Div(
                 [
-                    html.Div('BRK', className='sidebar-logo-title'),
+                    html.Div('Nstech', className='sidebar-nstech-label'),
+                    html.Div(
+                        [
+                            html.Span('BRK', className='sidebar-brk-title'),
+                            html.Span('Tecnologia', className='sidebar-brk-sub'),
+                        ],
+                        className='sidebar-brk-row',
+                    ),
                     html.Div('Faturamento Analytics', className='sidebar-logo-sub'),
                 ],
                 className='sidebar-logo',
@@ -44,7 +51,10 @@ def build_navbar(pathname='/'):
                 className='sidebar-nav',
             ),
             html.Div(
-                'Nstech Group · 2026',
+                [
+                    html.Div('Nstech Group', style={'fontWeight': '600', 'color': '#64748B', 'fontSize': '11px'}),
+                    html.Div('BRK Tecnologia · 2026', style={'color': '#475569', 'fontSize': '10px', 'marginTop': '2px'}),
+                ],
                 className='sidebar-footer',
             ),
         ],

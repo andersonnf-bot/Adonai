@@ -63,6 +63,38 @@ html, body {
   border-bottom: 1px solid var(--border);
 }
 
+.sidebar-nstech-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+  opacity: 0.85;
+}
+
+.sidebar-brk-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.sidebar-brk-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1E90FF;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.sidebar-brk-sub {
+  font-size: 13px;
+  font-weight: 400;
+  color: #94A3B8;
+  letter-spacing: 0px;
+}
+
 .sidebar-logo-title {
   font-size: 18px;
   font-weight: 800;

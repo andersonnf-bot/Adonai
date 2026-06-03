@@ -1,10 +1,25 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
+import glob
 
-DATA_PATH = Path(__file__).parent.parent.parent / 'faturamento_2023_24_25_26.xlsx'
-SHEET = '2-Itens das Notas Fiscais de '
 EXCLUDE_SERIES = {'RET', 'DAV'}
+
+def _find_data_file():
+    base = Path(__file__).parent.parent.parent
+    xlsx_files = [
+        f for f in base.glob('*.xlsx')
+        if not f.name.startswith('~$')
+    ]
+    if not xlsx_files:
+        raise FileNotFoundError(f'Nenhum arquivo .xlsx encontrado em {base}')
+    return max(xlsx_files, key=lambda f: f.stat().st_mtime)
+
+def _find_sheet(xl):
+    for name in xl.sheet_names:
+        if any(k in name for k in ['Itens', 'NF', 'Notas', 'Fatura']):
+            return name
+    return xl.sheet_names[0]
 
 _cache = {}
 
@@ -13,7 +28,10 @@ def load_data():
     if 'raw' in _cache:
         return _cache['raw'], _cache['liquid']
 
-    df = pd.read_excel(DATA_PATH, sheet_name=SHEET, engine='openpyxl')
+    data_path = _find_data_file()
+    xl = pd.ExcelFile(data_path, engine='openpyxl')
+    sheet = _find_sheet(xl)
+    df = xl.parse(sheet)
 
     df['Emissao'] = pd.to_datetime(df['Emissao'], errors='coerce')
     df['Nome'] = df['Nome'].str.strip().str.upper()

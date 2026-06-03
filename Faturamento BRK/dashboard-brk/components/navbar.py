@@ -6,7 +6,6 @@ PAGES = [
     {'path': '/clientes',    'label': 'Clientes',          'icon': '🏢'},
     {'path': '/produtos',    'label': 'Produtos & Serviços','icon': '📦'},
     {'path': '/tendencias',  'label': 'Tendências',         'icon': '📈'},
-    {'path': '/documentos',  'label': 'Documentos',         'icon': '🧾'},
 ]
 
 

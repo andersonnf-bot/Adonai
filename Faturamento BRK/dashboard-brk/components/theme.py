@@ -70,11 +70,12 @@ pio.templates.default = 'nstech'
 
 
 def fmt_brl(value):
-    if value >= 1_000_000:
-        return f'R$ {value/1_000_000:.1f}M'
-    if value >= 1_000:
-        return f'R$ {value/1_000:.0f}K'
-    return f'R$ {value:.0f}'
+    v = float(value)  # garante compatibilidade com numpy float32/float64
+    if v >= 1_000_000:
+        return f'R$ {v/1_000_000:.1f}M'
+    if v >= 1_000:
+        return f'R$ {v/1_000:.0f}K'
+    return f'R$ {v:.0f}'
 
 
 def fmt_pct(value, decimals=1):

@@ -108,7 +108,7 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
     months_sorted = sorted(monthly.columns)
     monthly = monthly[months_sorted]
 
-    agg = df.groupby('Nome').agg(
+    agg = df.groupby('GrupoEcon').agg(
         receita=('Vlr.Total', 'sum'),
         nfs=('Num. Docto.', 'nunique'),
         servicos=('Descricao', 'nunique'),
@@ -142,7 +142,7 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
         novo_tag = ' ✨' if r['Novo'] else ''
         records.append({
             '#': int(r['Rank']),
-            'Cliente': r['Nome'] + novo_tag,
+            'Cliente': r['GrupoEcon'] + novo_tag,
             'Receita Total': f"R$ {r['receita']:,.0f}",
             '% da Carteira': f"{r['pct_total']:.2f}%",
             'Último Mês': f"R$ {r['ult_mes']:,.0f}" if pd.notna(r['ult_mes']) else '—',
@@ -185,7 +185,7 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, 
     df_all = get_liquid()
     df_base = apply_filters(df_all, start_date, end_date, anos, None, produto, valor_min, valor_max)
 
-    df_cli = df_base[df_base['Nome'] == nome]
+    df_cli = df_base[df_base['GrupoEcon'] == nome]
     if df_cli.empty:
         return html.Div('Sem dados para este cliente no período.', style={'color': COLORS['text_muted']})
 

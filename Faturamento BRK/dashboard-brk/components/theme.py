@@ -52,8 +52,9 @@ _template.layout = go.Layout(
         tickfont=dict(color=COLORS['text_secondary'], size=11),
         title_font=dict(color=COLORS['text_secondary']),
         zerolinecolor=COLORS['border'],
+        automargin=True,
     ),
-    margin=dict(l=40, r=20, t=50, b=40),
+    margin=dict(l=75, r=20, t=50, b=40),
     hovermode='x unified',
     hoverlabel=dict(
         bgcolor=COLORS['surface2'],

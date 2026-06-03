@@ -118,7 +118,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     # ── KPIs ──
     receita_total = df['Vlr.Total'].sum()
     receita_liquida = df[~df['Serie'].isin({'RET', 'DAV'})]['Vlr.Total'].sum()
-    clientes_ativos = df['Nome'].nunique()
+    clientes_ativos = df['GrupoEcon'].nunique()
     nfs = df['Num. Docto.'].nunique()
     itens = len(df)
     ticket_medio = df.groupby('Num. Docto.')['Vlr.Total'].sum().mean() if nfs > 0 else 0
@@ -224,7 +224,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     fig_treemap.update_layout(title='Composição por Serviço · Todos os Serviços', height=400, margin=dict(t=40, l=0, r=0, b=0))
 
     # ── Concentração ──
-    client_rev = df.groupby('Nome')['Vlr.Total'].sum().sort_values(ascending=False).reset_index()
+    client_rev = df.groupby('GrupoEcon')['Vlr.Total'].sum().sort_values(ascending=False).reset_index()
     client_rev['rank'] = range(1, len(client_rev) + 1)
     client_rev['cumsum'] = client_rev['Vlr.Total'].cumsum()
     client_rev['cumpct'] = client_rev['cumsum'] / client_rev['Vlr.Total'].sum() * 100

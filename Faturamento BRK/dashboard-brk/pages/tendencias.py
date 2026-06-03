@@ -269,7 +269,7 @@ def update_tendencias(start_date, end_date, anos, cliente, produto, valor_min, v
 
     # ── Coorte ──
     df_cohort_src = get_liquid()
-    primeira_nf = df_cohort_src.groupby('Nome')['Emissao'].min().reset_index()
+    primeira_nf = df_cohort_src.groupby('GrupoEcon')['Emissao'].min().reset_index()
     primeira_nf.columns = ['Nome', 'primeira_nf']
     primeira_nf['CoorteAno'] = primeira_nf['primeira_nf'].dt.year.astype(str)
 
@@ -280,7 +280,7 @@ def update_tendencias(start_date, end_date, anos, cliente, produto, valor_min, v
     )
     df_cohort_merge = df_cohort_merge[df_cohort_merge['meses_desde_inicio'] <= 23]
 
-    cohort_data = df_cohort_merge.groupby(['CoorteAno', 'meses_desde_inicio'])['Nome'].nunique().unstack(fill_value=0)
+    cohort_data = df_cohort_merge.groupby(['CoorteAno', 'meses_desde_inicio'])['GrupoEcon'].nunique().unstack(fill_value=0)
     cohort_size = cohort_data[0] if 0 in cohort_data.columns else cohort_data.iloc[:, 0]
     cohort_pct = cohort_data.div(cohort_size, axis=0) * 100
     cohort_pct = cohort_pct.iloc[:, :13]

@@ -5,6 +5,49 @@ import glob
 
 EXCLUDE_SERIES = {'RET', 'DAV'}
 
+# Palavras genéricas do setor que NÃO identificam uma marca/grupo
+_GENERIC_PREFIXES = {
+    # Transporte / logística
+    'TRANSPORTES', 'TRANSPORTADORA', 'TRANSPORTE', 'TRANS',
+    'EXPRESSO', 'EXPRESSO.', 'RODOVIARIO', 'RODOVIARIOS',
+    'RODO', 'RODOTRANSPORTE', 'FRETE',
+    'LOGISTICA', 'LOG', 'LOGISTIC', 'LOGISTICS',
+    'RAPIDO', 'RAPIDOS', 'VELOZ', 'SPEED',
+    # Cooperativas genéricas
+    'COOPERATIVA', 'COOP',
+    # Palavras societárias / comerciais
+    'EMPRESA', 'EMPRESAS', 'GRUPO', 'GRUPOS', 'HOLDING',
+    'COMERCIO', 'COMERCIAL', 'INDUSTRIA', 'INDUSTRIAS',
+    'SERVICOS', 'SERVICO', 'SOLUCOES', 'SOLUCAO',
+    # Geográficos genéricos
+    'BRASIL', 'NACIONAL', 'REGIONAL', 'NORTE', 'SUL', 'LESTE', 'OESTE',
+    'NOVA', 'NOVO', 'INTER', 'SUPER', 'MEGA', 'MULTI',
+    # Letras isoladas e siglas comuns de iniciação
+    *[chr(c) for c in range(ord('A'), ord('Z') + 1)],
+    # Nomes próprios frequentes de MEI/individual
+    'ANTONIO', 'JOSE', 'JOAO', 'CARLOS', 'PAULO', 'PEDRO',
+    'MARIA', 'LUIZ', 'LUIS', 'ROBERTO', 'FRANCISCO', 'ANDRE',
+    'MARCOS', 'MARCIO', 'FABIO', 'DANIEL', 'RAFAEL', 'LUCAS',
+    'FAST',  # FAST SHOP != FAST FRIOS != FAST SOLUTION
+}
+
+
+def _extract_grupo(nome: str) -> str:
+    """
+    Retorna o nome do grupo econômico do cliente.
+    Usa a primeira palavra como grupo quando ela identifica uma marca real.
+    Palavras genéricas do setor retornam o nome completo (sem agrupamento).
+    """
+    if not nome or not isinstance(nome, str):
+        return nome or ''
+    words = nome.strip().upper().split()
+    if not words:
+        return nome
+    first = words[0].rstrip('.')
+    if first in _GENERIC_PREFIXES:
+        return nome  # mantém nome completo, sem agrupamento
+    return first  # usa primeira palavra como grupo (ex: UNILEVER, AMAZON, KLABIN)
+
 def _find_data_file():
     # Busca em ordem de prioridade: pasta data/ local, pasta pai (local Windows), raiz do projeto
     search_paths = [
@@ -54,6 +97,9 @@ def load_data():
     df['Vlr.Total'] = pd.to_numeric(df['Vlr.Total'], errors='coerce').fillna(0)
     df['Vlr.Unitario'] = pd.to_numeric(df['Vlr.Unitario'], errors='coerce').fillna(0)
 
+    # Grupo econômico: agrupa entidades da mesma marca (ex: todas as Unilever)
+    df['GrupoEcon'] = df['Nome'].apply(_extract_grupo)
+
     df_raw = df.copy()
     df_liquid = df[~df['Serie'].isin(EXCLUDE_SERIES)].copy()
 
@@ -92,12 +138,12 @@ def apply_filters(df, date_start=None, date_end=None, anos=None,
     if anos:
         mask &= df['Ano'].isin([int(a) for a in anos])
 
-    # cliente: lista = multi-select exato | string = busca parcial | vazio/None = todos
+    # cliente: filtra por GrupoEcon (agrupa entidades da mesma marca)
     if cliente:
         if isinstance(cliente, list) and len(cliente) > 0:
-            mask &= df['Nome'].isin(cliente)
+            mask &= df['GrupoEcon'].isin(cliente)
         elif isinstance(cliente, str) and cliente.strip():
-            mask &= df['Nome'].str.contains(cliente.strip().upper(), na=False)
+            mask &= df['GrupoEcon'].str.contains(cliente.strip().upper(), na=False)
 
     # produto: lista multi-select (vazia = todos)
     if produto:
@@ -126,8 +172,9 @@ def get_date_bounds():
 
 
 def get_all_clients():
+    """Retorna grupos econômicos únicos para o filtro (ex: UNILEVER em vez de 4 entidades)."""
     df = get_liquid()
-    return sorted(df['Nome'].dropna().unique().tolist())
+    return sorted(df['GrupoEcon'].dropna().unique().tolist())
 
 
 def get_all_products():

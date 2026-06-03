@@ -267,7 +267,7 @@ def update_produto_detail(active_cell, table_data, start_date, end_date, anos, c
     )
 
     # Clientes que consomem este serviço
-    cli_svc = df_svc.groupby('Nome').agg(
+    cli_svc = df_svc.groupby('GrupoEcon').agg(
         receita=('Vlr.Total', 'sum'),
         quantidade=('Quantidade', 'sum'),
         nfs=('Num. Docto.', 'nunique'),
@@ -287,7 +287,7 @@ def update_produto_detail(active_cell, table_data, start_date, end_date, anos, c
     )
 
     receita_total_svc = df_svc['Vlr.Total'].sum()
-    clientes_count = df_svc['Nome'].nunique()
+    clientes_count = df_svc['GrupoEcon'].nunique()
 
     return html.Div([
         html.Div([

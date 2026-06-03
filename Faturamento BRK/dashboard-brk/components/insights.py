@@ -53,7 +53,7 @@ def compute_insights(df: pd.DataFrame) -> list:
                 ))
 
     # ── Concentração ──
-    client_rev = df.groupby('Nome')['Vlr.Total'].sum()
+    client_rev = df.groupby('GrupoEcon')['Vlr.Total'].sum()
     total = client_rev.sum()
     top10_pct = client_rev.nlargest(10).sum() / total * 100 if total > 0 else 0
     if top10_pct > 40:
@@ -67,7 +67,7 @@ def compute_insights(df: pd.DataFrame) -> list:
         ))
 
     # ── Churn risk ──
-    ultima_nf = df.groupby('Nome')['Emissao'].max()
+    ultima_nf = df.groupby('GrupoEcon')['Emissao'].max()
     churn_risk = ultima_nf[(now - ultima_nf).dt.days.between(60, 179)]
     if len(churn_risk) > 0:
         insights.append(_item(
@@ -126,7 +126,7 @@ def compute_insights(df: pd.DataFrame) -> list:
                 ))
 
     # ── Novos clientes ──
-    first_nf = df.groupby('Nome')['Emissao'].min()
+    first_nf = df.groupby('GrupoEcon')['Emissao'].min()
     cutoff = now - pd.Timedelta(days=90)
     novos = first_nf[first_nf >= cutoff]
     if len(novos) > 0:
@@ -140,7 +140,7 @@ def compute_insights(df: pd.DataFrame) -> list:
         ))
 
     # ── Serviço único cliente ──
-    svc_clients = df.groupby('Descricao')['Nome'].nunique()
+    svc_clients = df.groupby('Descricao')['GrupoEcon'].nunique()
     mono = svc_clients[svc_clients == 1]
     if len(mono) > 0:
         insights.append(_item(

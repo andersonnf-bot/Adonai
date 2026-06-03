@@ -60,6 +60,8 @@ _template.layout = go.Layout(
         bgcolor=COLORS['surface2'],
         bordercolor=COLORS['border'],
         font=dict(color=COLORS['text'], size=12),
+        namelength=-1,   # sem truncamento do nome da série
+        align='left',
     ),
 )
 

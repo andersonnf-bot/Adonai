@@ -307,6 +307,7 @@ html, body {
   border-radius: var(--radius);
   padding: 20px;
   margin-bottom: 20px;
+  overflow: visible; /* permite tooltip Plotly ultrapassar as bordas do card */
 }
 
 .chart-card-header {

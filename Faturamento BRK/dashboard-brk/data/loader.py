@@ -107,6 +107,9 @@ _GENERIC_PREFIXES = {
     # ── Identificados pelo critério do segundo nome ──
     'VIANA',        # VIANA E GRACIERI (sócios) != VIANA E VIANA (sócios diferentes)
     'DDC',          # DDC CORDEIRO (Goianinha) != DDC SERVICOS DE ENTREGA (Mossoró) — 2o nome e cidade distintos
+    # ── Double-check 3 — critério segundo nome ──
+    'JALOTO',       # JALOTO & DRUGOVICH JUNIOR (sociedade 2 pessoas) != JALOTO TRANSPORTES (empresa individual)
+    'GUIA',         # GUIA CARGA (2 entidades iguais OK) != GUIA TRANSPORTES RODOVIARIOS (2o nome diferente)
 }
 
 

@@ -4,5 +4,6 @@ __pycache__/
 .env
 *.tmp
 ~$*
-# Nao ignorar o arquivo de dados dentro de data/
+# Nao ignorar arquivos de dados dentro de data/
 !data/*.xlsx
+!data/*.parquet

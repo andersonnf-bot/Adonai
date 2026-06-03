@@ -202,20 +202,24 @@ def _extract_grupo(nome: str) -> str:
     return first  # usa primeira palavra como grupo (ex: UNILEVER, AMAZON, KLABIN)
 
 def _find_data_file():
-    # Busca em ordem de prioridade: pasta data/ local, pasta pai (local Windows), raiz do projeto
+    """Busca parquet primeiro (mais eficiente), depois xlsx."""
     search_paths = [
-        Path(__file__).parent,           # dashboard-brk/data/  (cloud / Render)
+        Path(__file__).parent,                # dashboard-brk/data/  (cloud / Render)
         Path(__file__).parent.parent.parent,  # Faturamento BRK/     (Windows local)
-        Path(__file__).parent.parent,    # dashboard-brk/       (fallback)
+        Path(__file__).parent.parent,         # dashboard-brk/       (fallback)
     ]
+    # Parquet tem prioridade — menor memória e carregamento mais rápido
     for base in search_paths:
-        xlsx_files = [
-            f for f in base.glob('*.xlsx')
-            if not f.name.startswith('~$')
-        ]
-        if xlsx_files:
-            return max(xlsx_files, key=lambda f: f.stat().st_mtime)
-    raise FileNotFoundError('Nenhum arquivo .xlsx encontrado. Verifique a pasta de dados.')
+        pq = list(base.glob('*.parquet'))
+        if pq:
+            return max(pq, key=lambda f: f.stat().st_mtime)
+    # Fallback: xlsx
+    for base in search_paths:
+        xlsx = [f for f in base.glob('*.xlsx') if not f.name.startswith('~$')]
+        if xlsx:
+            return max(xlsx, key=lambda f: f.stat().st_mtime)
+    raise FileNotFoundError('Nenhum arquivo de dados encontrado (.parquet ou .xlsx).')
+
 
 def _find_sheet(xl):
     for name in xl.sheet_names:
@@ -223,7 +227,11 @@ def _find_sheet(xl):
             return name
     return xl.sheet_names[0]
 
+
 _cache = {}
+
+# Colunas que NÃO são usadas em nenhum gráfico ou tabela
+_COLUNAS_DISPENSAVEIS = ['Observacao', 'Vendedor', 'Unidade', 'Loja', 'Cliente']
 
 
 def load_data():
@@ -231,27 +239,40 @@ def load_data():
         return _cache['raw'], _cache['liquid']
 
     data_path = _find_data_file()
-    xl = pd.ExcelFile(data_path, engine='openpyxl')
-    sheet = _find_sheet(xl)
-    df = xl.parse(sheet)
 
+    # ── Carregamento: Parquet ou XLSX ──
+    if data_path.suffix == '.parquet':
+        df = pd.read_parquet(data_path)
+    else:
+        xl = pd.ExcelFile(data_path, engine='openpyxl')
+        sheet = _find_sheet(xl)
+        df = xl.parse(sheet)
+
+    # ── Limpeza e normalização ──
     df['Emissao'] = pd.to_datetime(df['Emissao'], errors='coerce')
     df['Nome'] = df['Nome'].str.strip().str.upper()
     df['Descricao'] = df['Descricao'].str.strip().str.upper()
     df['Serie'] = df['Serie'].str.strip().str.upper()
     df['Produto'] = df['Produto'].fillna('SEM_CODIGO').str.strip()
-    df['Cliente'] = df['Cliente'].fillna('').str.strip()
 
     df['Ano'] = df['Emissao'].dt.year.astype('Int64')
     df['Mes'] = df['Emissao'].dt.month.astype('Int64')
     df['AnoMesStr'] = df['Emissao'].dt.strftime('%Y-%m')
     df['Trimestre'] = df['Emissao'].dt.to_period('Q').astype(str)
-    df['Quantidade'] = pd.to_numeric(df['Quantidade'], errors='coerce').fillna(0)
-    df['Vlr.Total'] = pd.to_numeric(df['Vlr.Total'], errors='coerce').fillna(0)
-    df['Vlr.Unitario'] = pd.to_numeric(df['Vlr.Unitario'], errors='coerce').fillna(0)
+    df['Quantidade'] = pd.to_numeric(df['Quantidade'], errors='coerce').fillna(0).astype('float32')
+    df['Vlr.Total'] = pd.to_numeric(df['Vlr.Total'], errors='coerce').fillna(0).astype('float32')
+    df['Vlr.Unitario'] = pd.to_numeric(df['Vlr.Unitario'], errors='coerce').fillna(0).astype('float32')
 
-    # Grupo econômico: agrupa entidades da mesma marca (ex: todas as Unilever)
+    # Grupo econômico
     df['GrupoEcon'] = df['Nome'].apply(_extract_grupo)
+
+    # ── Remover colunas não utilizadas (economiza memória) ──
+    df.drop(columns=[c for c in _COLUNAS_DISPENSAVEIS if c in df.columns], inplace=True)
+
+    # ── Converter strings repetidas para category (economiza ~80% memória) ──
+    for col in ['Nome', 'GrupoEcon', 'Descricao', 'Serie', 'Produto', 'AnoMesStr', 'Trimestre']:
+        if col in df.columns:
+            df[col] = df[col].astype('category')
 
     df_raw = df.copy()
     df_liquid = df[~df['Serie'].isin(EXCLUDE_SERIES)].copy()

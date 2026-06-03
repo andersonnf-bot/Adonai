@@ -72,6 +72,31 @@ _GENERIC_PREFIXES = {
     'CONCEITO',     # CONCEITO TRANSPORTES EIRELI != CONCEITO TRANSPORTES LOCACAO
     'DALLA',        # DALLA VALLE != DALLA VECCHIA
     'WINGS',        # WINGS TRANSPORTADORA != WINGS TRANSPORTES BRASIL
+    # ── Identificados no double-check ──
+    'DIOGO',        # DIOGO ADRIANO != DIOGO BRAMBILA (pessoas diferentes)
+    'CS',           # CS NODARI != CS VENCATO
+    'TB',           # TB CARGO LOGISTICA != TB TRANSPORTES
+    'SANTOS',       # SANTOS GUARUJA != SANTOS TRANS
+    'MENDES',       # MENDES E KOCH != MENDES TALENT (RH)
+    'JR',           # JR LOG != JR TRANSPORTES
+    'FA',           # FA DOS SANTOS != FA REIS
+    'COMANDO',      # COMANDO DIESEL != COMANDO LOG
+    'MG',           # MG TERRAPLANAGEM != MG TRANSPORTES
+    'GW',           # GW CARGO != GW LOGISTICA
+    'DAS',          # DAS NEVES != DAS TRANSPORTES
+    'SP',           # SP ASSESSORIA != SP SOLUCOES
+    'FN',           # FN EXPRESS != FN TRANSPORTE
+    'AVANTE',       # AVANTE EXPRESS != AVANTE TRANSPORTES
+    'PRIME',        # PRIME BR != PRIME CARGO
+    'VIP',          # VIP 128 != VIP TRUCK
+    'RS',           # RS LOG != RS TRANSPORTES
+    'REIS',         # REIS SILVA != REIS TRANSPORTES
+    'MELINSKI',     # MELINSKI & MELINSKI != MELINSKI E ROSSI
+    'GHISOLFI',     # GHISOLFI LOGISTICA != GHISOLFI TRANSPORTES
+    'PERBONI',      # PERBONI FLV != PERBONI SA (atividades distintas)
+    'MARTINI',      # MARTINI MEAT (armazéns) != MARTINI TRANSPORTES
+    'SS',           # SS TRANSPORTES LTDA ME != SS TRANSPORTES RIO PRETO
+    'HORIZONTE',    # HORIZONTE JR (logística) != HORIZONTE TRANSPORTES
 }
 
 

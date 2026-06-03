@@ -181,21 +181,29 @@ def update_tendencias(start_date, end_date, anos, cliente, produto, valor_min, v
     szn_avg = df_szn.groupby('Mes')['Vlr.Total'].mean()
     szn_idx = szn_avg / szn_avg.mean() * 100
 
-    meses_label = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',
+    MESES_LABEL = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',
                    7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'}
-    szn_idx.index = [meses_label.get(m, m) for m in szn_idx.index]
+    # Manter indice numerico para garantir ordem cronologica
+    szn_idx = szn_idx.reindex(range(1, 13), fill_value=100)
 
     colors_szn = [COLORS['success'] if v >= 100 else COLORS['danger'] for v in szn_idx.values]
     fig_szn = go.Figure(go.Bar(
         x=list(szn_idx.index), y=szn_idx.values,
         marker_color=colors_szn, marker_opacity=0.85,
-        hovertemplate='<b>%{x}</b><br>Índice: %{y:.1f} (base 100)<extra></extra>',
+        customdata=[MESES_LABEL[m] for m in szn_idx.index],
+        hovertemplate='<b>%{customdata}</b><br>Índice: %{y:.1f} (base 100)<extra></extra>',
     ))
     fig_szn.add_hline(y=100, line_dash='dot', line_color=COLORS['text_muted'],
                       annotation_text='Base 100 (média)', annotation_font=dict(color=COLORS['text_muted']))
     fig_szn.update_layout(
         title='Índice de Sazonalidade Mensal (base 100 = média histórica)',
-        xaxis_title='', yaxis_title='Índice',
+        xaxis=dict(
+            tickmode='array',
+            tickvals=list(range(1, 13)),
+            ticktext=list(MESES_LABEL.values()),
+            title='',
+        ),
+        yaxis_title='Índice',
         height=300,
     )
 

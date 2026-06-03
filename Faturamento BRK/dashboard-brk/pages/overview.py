@@ -111,6 +111,8 @@ layout = html.Div([
     Input('filter-valor-max', 'value'),
 )
 def update_overview(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
+    MESES_LABEL = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',
+                   7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'}
     df_all = get_liquid()
     df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
 
@@ -177,11 +179,11 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     )
 
     # ── YoY ──
+    # Usa numero do mes no eixo X para garantir ordem cronologica correta
+    MESES_LABEL = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',
+                   7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'}
     df['AnoNum'] = df['Ano'].astype(int)
     yoy = df.groupby(['AnoNum', 'Mes'])['Vlr.Total'].sum().reset_index()
-    meses_label = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',
-                   7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'}
-    yoy['MesLabel'] = yoy['Mes'].map(meses_label)
     fig_yoy = go.Figure()
     anos_list = sorted(yoy['AnoNum'].unique())
     for i, ano in enumerate(anos_list):
@@ -189,15 +191,22 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         color = CHART_COLORS[i % len(CHART_COLORS)]
         dash_style = 'dot' if ano == max(anos_list) else 'solid'
         fig_yoy.add_trace(go.Scatter(
-            x=d['MesLabel'], y=d['Vlr.Total'],
+            x=d['Mes'], y=d['Vlr.Total'],          # numero do mes — ordem garantida
             name=str(ano), mode='lines+markers',
             line=dict(color=color, width=2, dash=dash_style),
             marker=dict(size=5),
-            hovertemplate=f'<b>{ano}</b> %{{x}}<br>R$ %{{y:,.0f}}<extra></extra>',
+            customdata=d['Mes'].map(MESES_LABEL),
+            hovertemplate=f'<b>{ano}</b> %{{customdata}}<br>R$ %{{y:,.0f}}<extra></extra>',
         ))
     fig_yoy.update_layout(
         title='Comparativo Anual (YoY)',
-        xaxis_title='', yaxis_title='R$',
+        xaxis=dict(
+            tickmode='array',
+            tickvals=list(range(1, 13)),
+            ticktext=list(MESES_LABEL.values()),   # Jan, Fev, ... Dez
+            title='',
+        ),
+        yaxis_title='R$',
         yaxis_tickformat=',.0f',
         legend=dict(orientation='h', y=1.1),
         height=320,
@@ -255,7 +264,9 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
 
     # ── Heatmap ──
     pivot = df.groupby(['Ano', 'Mes'])['Vlr.Total'].sum().unstack(fill_value=0)
-    meses_cols = [meses_label.get(c, str(c)) for c in pivot.columns]
+    # Reindexar para garantir todos os meses em ordem (1-12)
+    pivot = pivot.reindex(columns=range(1, 13), fill_value=0)
+    meses_cols = [MESES_LABEL.get(c, str(c)) for c in pivot.columns]
     fig_heat = go.Figure(go.Heatmap(
         z=pivot.values / 1_000_000,
         x=meses_cols,
@@ -279,21 +290,27 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     if len(anos_disponiveis) >= 1:
         for i, ano in enumerate(anos_disponiveis[-3:]):
             d = df[df['Ano'] == ano].groupby('Mes')['Vlr.Total'].sum().sort_index().cumsum().reset_index()
-            d['MesLabel'] = d['Mes'].map(meses_label)
             color = CHART_COLORS[i % len(CHART_COLORS)]
             dash_style = 'dot' if ano == max(anos_disponiveis) else 'solid'
             fill = 'tozeroy' if ano == max(anos_disponiveis) else 'none'
             fig_cum.add_trace(go.Scatter(
-                x=d['MesLabel'], y=d['Vlr.Total'],
+                x=d['Mes'], y=d['Vlr.Total'],   # numero do mes — ordem cronologica
                 name=str(ano), mode='lines',
                 line=dict(color=color, width=2.5, dash=dash_style),
                 fill=fill,
                 fillcolor=f'rgba(255,101,0,0.08)' if fill != 'none' else None,
-                hovertemplate=f'<b>{ano}</b> %{{x}}<br>Acumulado: R$ %{{y:,.0f}}<extra></extra>',
+                customdata=d['Mes'].map(MESES_LABEL),
+                hovertemplate=f'<b>{ano}</b> %{{customdata}}<br>Acumulado: R$ %{{y:,.0f}}<extra></extra>',
             ))
     fig_cum.update_layout(
         title='Receita Acumulada no Ano (Running Total)',
-        xaxis_title='', yaxis_title='R$',
+        xaxis=dict(
+            tickmode='array',
+            tickvals=list(range(1, 13)),
+            ticktext=list(MESES_LABEL.values()),
+            title='',
+        ),
+        yaxis_title='R$',
         yaxis_tickformat=',.0f',
         legend=dict(orientation='h', y=1.1),
         height=320,

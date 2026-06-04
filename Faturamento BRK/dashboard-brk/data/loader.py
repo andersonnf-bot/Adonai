@@ -177,7 +177,54 @@ _MANUAL_GROUPS = {
     # COOPERATIVA TRANSPORTES BENS MARAU — R$ 92K
     'COOPERATIVA DE TRANSPORTES DE BENS DE MARAU':      'COOPERATIVA TRANSPORTES BENS MARAU',
     'COOPERATIVA DE TRANSPORTES DE BENS DE MARAU LTDA': 'COOPERATIVA TRANSPORTES BENS MARAU',
+    # EBAZAR.COM.BR — marketplace e-commerce (mesmo grupo, duas grafias) — R$ 4M+
+    'EBAZAR.COM.BR. LTDA':  'EBAZAR.COM.BR',
+    'EBAZARCOMBR LTDA':     'EBAZAR.COM.BR',
 }
+
+
+# Normalização de descrições de serviços — corrige variações tipográficas
+# Chave = nome exato no sistema (upper) | Valor = nome canônico
+_SERVICE_NORMALIZE = {
+    # MONITORAMENTO AVULSO (barra vs espaço)
+    'MONITORAMENTO AVULSO AGR AUT':          'MONITORAMENTO AVULSO AGR/AUT',
+    # POSTO AVANCADO — variações de localidade (barra vs espaço)
+    'POSTO AVANCADO - GUARULHOS SP':         'POSTO AVANCADO GUARULHOS/SP',
+    'POSTO AVANCADO - GUARULHOS/SP':         'POSTO AVANCADO GUARULHOS/SP',
+    'POSTO AVANCADO EXTREMA MG':             'POSTO AVANCADO EXTREMA/MG',
+    'POSTO AVANCADO SUAPE PE':               'POSTO AVANCADO SUAPE/PE',
+    # ANALISE DE FUNCIONARIO (hífen vs sem)
+    'ANALISE DE FUNCIONARIO - RH':           'ANALISE DE FUNCIONARIO RH',
+    # LIBERACAO/CONSULTA — várias grafias para o mesmo serviço
+    'LIBERACAO CONSULTA CLIENTE':            'LIBERACAO/CONSULTA CLIENTE',
+    'LIBERACAO CONSULTA CLIENTE NS':         'LIBERACAO/CONSULTA CLIENTE',
+    'LIBERACAO CONSULTA CLIEN 03093':        'LIBERACAO/CONSULTA CLIENTE',
+    'LIBERACAO/CONSULTA CLIEN 03093':        'LIBERACAO/CONSULTA CLIENTE',
+    'LIBERACAO/CONSULTA CLIENTE  NS':        'LIBERACAO/CONSULTA CLIENTE',
+    'LIBERACAO CONSULTA TRANSPORT':          'LIBERACAO/CONSULTA TRANSPORT.',
+    'LIBERACAO CONSULTA TRANS 03093':        'LIBERACAO/CONSULTA TRANSPORT.',
+    'LIBERACAO/CONSULTA TRANS 03093':        'LIBERACAO/CONSULTA TRANSPORT.',
+    # LICENCA DE SOFTWARE — variações menores
+    'LICENCA DE SOFTWARE - 03093':           'LICENCA DE SOFTWARE',
+    'LICENCA DE SOFTWARE UNIF NS':           'LICENCA DE SOFTWARE',
+    # GESTAO LOGISTICA — variações de código
+    'GESTAO LOGISTICA EMBAR 02919':          'GESTAO LOGISTICA EMBARQUE',
+    'GESTAO LOGISTICA PADRAO 02919':         'GESTAO LOGISTICA PADRAO',
+    # PREVENCAO DE ACIDENTES — só unifica variações tipográficas, mantém subtipo
+    'PREVENCAO DE ACIDENTES EMBAR':          'PREVENCAO DE ACIDENTES - EMBAR',
+    # CADASTRO CONJUNTO COMPLEMENTAR
+    'CADASTRO CONJ COMPLEM.  MOT NS':        'CADASTRO CONJ COMPLEMENTAR NS',
+    # COORDENADOR LOGISTICA
+    'COORDENADOR LOGISTICA - EXTER':         'COORDENADOR LOGISTICA - EXTERNO',
+}
+
+
+def _normalize_service(desc: str) -> str:
+    """Normaliza grafias duplicadas de serviços (barra/hífen, espaços, códigos)."""
+    if not desc or not isinstance(desc, str):
+        return desc or ''
+    upper = desc.strip().upper()
+    return _SERVICE_NORMALIZE.get(upper, upper)
 
 
 def _extract_grupo(nome: str) -> str:
@@ -251,7 +298,7 @@ def load_data():
     # ── Limpeza e normalização ──
     df['Emissao'] = pd.to_datetime(df['Emissao'], errors='coerce')
     df['Nome'] = df['Nome'].str.strip().str.upper()
-    df['Descricao'] = df['Descricao'].str.strip().str.upper()
+    df['Descricao'] = df['Descricao'].str.strip().str.upper().apply(_normalize_service)
     df['Serie'] = df['Serie'].str.strip().str.upper()
     df['Produto'] = df['Produto'].fillna('SEM_CODIGO').str.strip()
 

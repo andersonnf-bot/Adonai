@@ -118,36 +118,81 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
 
 
     # ── KPIs ──
-    receita_total = df['Vlr.Total'].sum()
-    receita_liquida = df[~df['Serie'].isin({'RET', 'DAV'})]['Vlr.Total'].sum()
-    clientes_ativos = df['GrupoEcon'].nunique()
-    nfs = df['Num. Docto.'].nunique()
-    itens = len(df)
-    ticket_medio = df.groupby('Num. Docto.')['Vlr.Total'].sum().mean() if nfs > 0 else 0
-    qtd_total = df['Quantidade'].sum()
-    servicos_distintos = df['Descricao'].nunique()
+    monthly = df.groupby('AnoMesStr', observed=True)['Vlr.Total'].sum().sort_index()
+    n = len(monthly)
 
-    monthly = df.groupby('AnoMesStr')['Vlr.Total'].sum().sort_index()
-    mrr = monthly.iloc[-3:].mean() if len(monthly) >= 3 else monthly.mean()
+    # 1. Receita Líquida
+    receita_liquida = float(df[~df['Serie'].astype(str).isin({'RET', 'DAV'})]['Vlr.Total'].sum())
 
-    delta_receita = None
-    if len(monthly) >= 2:
-        half = len(monthly) // 2
-        first_half = monthly.iloc[:half].sum()
-        second_half = monthly.iloc[half:].sum()
-        if first_half > 0:
-            delta_receita = (second_half - first_half) / first_half * 100
+    # 2. MRR — média dos últimos 3 meses
+    mrr = float(monthly.iloc[-3:].mean()) if n >= 3 else float(monthly.mean()) if n > 0 else 0.0
+
+    # helper: variação %
+    def _var(atual, anterior):
+        return (atual - anterior) / anterior * 100 if anterior > 0 else None
+
+    # 3. Crescimento Anual (YoY) — ano atual vs ano anterior completo
+    now_ts  = pd.Timestamp(df['Emissao'].max())
+    ano_cur = now_ts.year
+    df_ano_cur  = df[df['Ano'] == ano_cur]
+    df_ano_prev = df[df['Ano'] == ano_cur - 1]
+    fat_ano     = float(df_ano_cur['Vlr.Total'].sum())
+    fat_ano_ant = float(df_ano_prev['Vlr.Total'].sum())
+    delta_ano   = _var(fat_ano, fat_ano_ant)
+
+    # 4. Crescimento Semestral — últimos 6M vs 6M anteriores
+    fat_6m      = float(monthly.iloc[-6:].sum())  if n >= 6  else float(monthly.sum())
+    fat_6m_prev = float(monthly.iloc[-12:-6].sum()) if n >= 12 else float(monthly.iloc[:-6].sum()) if n >= 7 else 0.0
+    delta_6m    = _var(fat_6m, fat_6m_prev)
+
+    # 5. Crescimento Trimestral — últimos 3M vs 3M anteriores
+    fat_3m      = float(monthly.iloc[-3:].sum())  if n >= 3 else float(monthly.sum())
+    fat_3m_prev = float(monthly.iloc[-6:-3].sum()) if n >= 6 else float(monthly.iloc[:-3].sum()) if n >= 4 else 0.0
+    delta_3m    = _var(fat_3m, fat_3m_prev)
+
+    # 6. Crescimento Mensal — último mês vs mês anterior
+    fat_1m      = float(monthly.iloc[-1]) if n >= 1 else 0.0
+    fat_1m_prev = float(monthly.iloc[-2]) if n >= 2 else 0.0
+    delta_1m    = _var(fat_1m, fat_1m_prev)
+
+    # 7. Clientes no período selecionado
+    clientes_periodo = int(df['GrupoEcon'].nunique())
+
+    # 8. Clientes faturados no último mês
+    ultimo_mes = monthly.index[-1] if n >= 1 else None
+    clientes_ult_mes = int(
+        df[df['AnoMesStr'].astype(str) == ultimo_mes]['GrupoEcon'].nunique()
+    ) if ultimo_mes else 0
+
+    # 9. Ticket médio por cliente/mês
+    if clientes_periodo > 0 and n > 0:
+        ticket_cliente_mes = float(df['Vlr.Total'].sum()) / clientes_periodo / n
+    else:
+        ticket_cliente_mes = 0.0
+
+    # 10. Ticket médio dos Top 5 serviços/mês
+    top5_svc = (
+        df.groupby('Descricao', observed=True)['Vlr.Total'].sum()
+        .nlargest(5).index
+    )
+    ticket_top5 = float(
+        df[df['Descricao'].isin(top5_svc)]
+        .groupby(['Descricao', 'AnoMesStr'], observed=True)['Vlr.Total'].sum()
+        .groupby('Descricao', observed=True).mean()
+        .mean()
+    ) if len(top5_svc) > 0 and n > 0 else 0.0
 
     cards = kpi_grid([
-        kpi_card('Receita Total', receita_total, '💰', delta_receita, 'vs. metade anterior do período'),
-        kpi_card('Receita Líquida', receita_liquida, '✅', None, 'excluindo RET e DAV'),
-        kpi_card('MRR', mrr, '📅', None, 'média últimos 3 meses'),
-        kpi_card('Clientes Ativos', clientes_ativos, '🏢', None, 'com ao menos 1 NF', value_fmt='int'),
-        kpi_card('NFs Emitidas', nfs, '🧾', None, 'no período', value_fmt='int'),
-        kpi_card('Itens Faturados', itens, '📋', None, 'linhas de NF', value_fmt='int'),
-        kpi_card('Ticket Médio NF', ticket_medio, '🎯'),
-        kpi_card('Unidades Faturadas', qtd_total, '📦', None, 'total de UN', value_fmt='int'),
-        kpi_card('Serviços Distintos', servicos_distintos, '⚙️', None, 'produtos faturados', value_fmt='int'),
+        kpi_card('Receita Líquida',          receita_liquida,    '✅', None,      'excluindo RET e DAV'),
+        kpi_card('MRR',                      mrr,                '📅', None,      'média últimos 3 meses'),
+        kpi_card('Faturado no Ano',          fat_ano,            '📆', delta_ano, f'vs. {ano_cur - 1} completo'),
+        kpi_card('Faturado 6 Meses',         fat_6m,             '📊', delta_6m,  'vs. 6 meses anteriores'),
+        kpi_card('Faturado Trimestre',       fat_3m,             '📈', delta_3m,  'vs. trimestre anterior'),
+        kpi_card('Faturado Mês',             fat_1m,             '🗓️', delta_1m,  'vs. mês anterior'),
+        kpi_card('Clientes no Período',      clientes_periodo,   '🏢', None,      'grupos econômicos ativos', value_fmt='int'),
+        kpi_card('Clientes Último Mês',      clientes_ult_mes,   '👥', None,      f'faturados em {ultimo_mes or "—"}', value_fmt='int'),
+        kpi_card('Ticket Médio Cliente/Mês', ticket_cliente_mes, '🎯', None,      'receita ÷ clientes ÷ meses'),
+        kpi_card('Ticket Top 5 Serviços/Mês',ticket_top5,       '🏆', None,      'média mensal dos 5 maiores serviços'),
     ])
 
     insights = insight_panel(df)

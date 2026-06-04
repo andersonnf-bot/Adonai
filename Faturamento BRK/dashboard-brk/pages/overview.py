@@ -72,8 +72,8 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div([
-                    html.Div('Heatmap · Receita por Mês × Ano', className='chart-title'),
-                    html.Div('Identifica sazonalidade e variações históricas', className='chart-subtitle'),
+                    html.Div('Sazonalidade · Receita Média por Mês', className='chart-title'),
+                    html.Div('Padrão histórico — identifica meses fortes e fracos', className='chart-subtitle'),
                 ]),
             ], className='chart-card-header'),
             dcc.Graph(id='overview-chart-heatmap', config={'displayModeBar': False}),
@@ -197,8 +197,8 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
 
     insights = insight_panel(df)
 
-    # ── Gráfico Mensal ──
-    monthly_full = df.groupby('AnoMesStr')['Vlr.Total'].sum().reset_index()
+    # ── Gráfico Mensal com Tendência + IC + Anotação Anomalia ──
+    monthly_full = df.groupby('AnoMesStr', observed=True)['Vlr.Total'].sum().reset_index()
     monthly_full.columns = ['Mês', 'Receita']
     fig_monthly = go.Figure()
     fig_monthly.add_trace(go.Bar(
@@ -207,16 +207,41 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         marker_opacity=0.85,
         hovertemplate='<b>%{x}</b><br>Receita: R$ %{y:,.0f}<extra></extra>',
     ))
-    if len(monthly_full) >= 3:
-        z = np.polyfit(range(len(monthly_full)), monthly_full['Receita'], 1)
-        trend = np.poly1d(z)(range(len(monthly_full)))
+    if len(monthly_full) >= 6:
+        xs = np.arange(len(monthly_full))
+        ys = monthly_full['Receita'].values
+        z    = np.polyfit(xs, ys, 1)
+        poly = np.poly1d(z)
+        trend  = poly(xs)
+        # IC 80% — baseado nos resíduos
+        residuos = ys - trend
+        std_res  = float(np.std(residuos))
+        ic_upper = trend + 1.28 * std_res
+        ic_lower = trend - 1.28 * std_res
+        # Banda de IC
+        fig_monthly.add_trace(go.Scatter(
+            x=list(monthly_full['Mês']) + list(monthly_full['Mês'])[::-1],
+            y=list(ic_upper) + list(ic_lower)[::-1],
+            fill='toself', fillcolor='rgba(30,144,255,0.08)',
+            line=dict(color='rgba(0,0,0,0)'),
+            name='IC 80%', hoverinfo='skip',
+        ))
         fig_monthly.add_trace(go.Scatter(
             x=monthly_full['Mês'], y=trend,
             name='Tendência', line=dict(color=COLORS['info'], width=2, dash='dot'),
             hovertemplate='Tendência: R$ %{y:,.0f}<extra></extra>',
         ))
+        # Detecta meses anômalos (> 2,5σ acima da tendência) e anota
+        for i, (mes, rec) in enumerate(zip(monthly_full['Mês'], ys)):
+            if rec - trend[i] > 2.5 * std_res:
+                fig_monthly.add_annotation(
+                    x=mes, y=float(rec),
+                    text='⚡', showarrow=False,
+                    font=dict(size=14), yshift=10,
+                    hovertext=f'Pico atípico: R$ {rec/1e6:.1f}M<br>+{(rec-trend[i])/1e6:.1f}M acima da tendência',
+                )
     fig_monthly.update_layout(
-        title='Receita Mensal com Tendência',
+        title='Receita Mensal · Tendência + IC 80% (⚡ = pico atípico)',
         xaxis_title='', yaxis_title='R$',
         yaxis_tickformat=',.0f',
         legend=dict(orientation='h', y=1.1),
@@ -277,11 +302,13 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     ))
     fig_treemap.update_layout(title='Composição por Serviço · Todos os Serviços', height=400, margin=dict(t=40, l=0, r=0, b=0))
 
-    # ── Concentração ──
-    client_rev = df.groupby('GrupoEcon')['Vlr.Total'].sum().sort_values(ascending=False).reset_index()
-    client_rev['rank'] = range(1, len(client_rev) + 1)
-    client_rev['cumsum'] = client_rev['Vlr.Total'].cumsum()
-    client_rev['cumpct'] = client_rev['cumsum'] / client_rev['Vlr.Total'].sum() * 100
+    # ── Concentração com alerta de risco ──
+    client_rev = df.groupby('GrupoEcon', observed=True)['Vlr.Total'].sum().sort_values(ascending=False).reset_index()
+    total_rev  = float(client_rev['Vlr.Total'].sum())
+    top1_pct   = float(client_rev.iloc[0]['Vlr.Total']) / total_rev * 100 if len(client_rev) > 0 else 0
+    top1_nome  = str(client_rev.iloc[0]['GrupoEcon']) if len(client_rev) > 0 else '—'
+    top5_pct   = float(client_rev.iloc[:5]['Vlr.Total'].sum()) / total_rev * 100 if len(client_rev) >= 5 else 0
+    top10_pct  = float(client_rev.iloc[:10]['Vlr.Total'].sum()) / total_rev * 100 if len(client_rev) >= 10 else 0
 
     faixas = ['Top 1', 'Top 2-10', 'Top 11-50', 'Top 51-100', 'Demais']
     slices = [
@@ -291,41 +318,69 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         client_rev.iloc[50:100]['Vlr.Total'].sum(),
         client_rev.iloc[100:]['Vlr.Total'].sum(),
     ]
+    # Cor do Top1 varia conforme nível de risco
+    top1_color = COLORS['danger'] if top1_pct > 10 else COLORS['warning'] if top1_pct > 7 else COLORS['success']
+    risco_label = '🔴 Alto' if top1_pct > 10 else '🟡 Moderado' if top1_pct > 7 else '🟢 Saudável'
+
     fig_conc = go.Figure(go.Pie(
         labels=faixas, values=slices,
         hole=0.55,
-        marker=dict(colors=[COLORS['danger'], COLORS['warning'], COLORS['primary'], COLORS['info'], COLORS['text_muted']]),
+        marker=dict(colors=[top1_color, COLORS['warning'], COLORS['primary'], COLORS['info'], COLORS['text_muted']]),
         textinfo='label+percent',
         hovertemplate='<b>%{label}</b><br>R$ %{value:,.0f}<br>%{percent}<extra></extra>',
     ))
     fig_conc.update_layout(
-        title='Distribuição de Receita por Faixa de Cliente',
+        title=f'Concentração de Receita · Risco: {risco_label}',
         showlegend=True,
         legend=dict(orientation='v'),
         height=400,
-        annotations=[dict(text=f'{len(client_rev)}<br>clientes', x=0.5, y=0.5,
-                          font=dict(size=14, color=COLORS['text']), showarrow=False)],
+        annotations=[dict(
+            text=f'<b>{top1_nome}</b><br>{top1_pct:.1f}%<br>Top 1',
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=11, color=top1_color),
+        )],
     )
+    # Linha de referência no Pareto — curva de concentração acumulada
+    client_rev['cumpct'] = client_rev['Vlr.Total'].cumsum() / total_rev * 100
 
-    # ── Heatmap ──
-    pivot = df.groupby(['Ano', 'Mes'])['Vlr.Total'].sum().unstack(fill_value=0)
-    # Reindexar para garantir todos os meses em ordem (1-12)
-    pivot = pivot.reindex(columns=range(1, 13), fill_value=0)
-    meses_cols = [MESES_LABEL.get(c, str(c)) for c in pivot.columns]
-    fig_heat = go.Figure(go.Heatmap(
-        z=pivot.values / 1_000_000,
-        x=meses_cols,
-        y=[str(int(a)) for a in pivot.index],
-        colorscale=[[0, COLORS['surface2']], [0.5, COLORS['primary_dark']], [1, COLORS['primary']]],
-        hovertemplate='<b>%{y} · %{x}</b><br>R$ %{z:.2f}M<extra></extra>',
-        text=[[f'R$ {v:.1f}M' for v in row] for row in pivot.values / 1_000_000],
-        texttemplate='%{text}',
-        showscale=True,
-        colorbar=dict(tickfont=dict(color=COLORS['text_secondary'])),
+    # ── Sazonalidade — receita média por mês (todos os anos) ──
+    df_saz = df.copy()
+    df_saz['mes_num'] = df_saz['Emissao'].dt.month
+    saz = df_saz.groupby(['Ano', 'mes_num'], observed=True)['Vlr.Total'].sum().reset_index()
+    saz_media = saz.groupby('mes_num')['Vlr.Total'].mean().reset_index()
+    saz_media['mes_label'] = saz_media['mes_num'].map(MESES_LABEL)
+    media_geral = float(saz_media['Vlr.Total'].mean())
+
+    # Cor das barras: acima da média = verde/laranja, abaixo = azul apagado
+    bar_colors = [
+        COLORS['primary'] if v >= media_geral else COLORS['text_muted']
+        for v in saz_media['Vlr.Total']
+    ]
+
+    fig_heat = go.Figure()
+    fig_heat.add_trace(go.Bar(
+        x=saz_media['mes_label'], y=saz_media['Vlr.Total'],
+        name='Média mensal',
+        marker_color=bar_colors,
+        marker_opacity=0.9,
+        hovertemplate='<b>%{x}</b><br>Média histórica: R$ %{y:,.0f}<extra></extra>',
     ))
+    # Linha de média geral
+    fig_heat.add_hline(
+        y=media_geral,
+        line_dash='dot', line_color=COLORS['warning'], line_width=1.5,
+        annotation_text=f'Média geral: {fmt_brl(media_geral)}',
+        annotation_font_color=COLORS['warning'],
+        annotation_position='bottom right',
+    )
+    # Destaque nos meses acima da média
+    mes_forte = saz_media.loc[saz_media['Vlr.Total'].idxmax(), 'mes_label']
+    mes_fraco = saz_media.loc[saz_media['Vlr.Total'].idxmin(), 'mes_label']
     fig_heat.update_layout(
-        title='Heatmap · Receita Mensal por Ano (R$ MM)',
-        xaxis_title='', yaxis_title='',
+        title=f'Sazonalidade · Receita Média por Mês (🔵 acima da média) · Pico: {mes_forte} · Vale: {mes_fraco}',
+        xaxis_title='', yaxis_title='R$',
+        yaxis_tickformat=',.0f',
+        showlegend=False,
         height=300,
     )
 

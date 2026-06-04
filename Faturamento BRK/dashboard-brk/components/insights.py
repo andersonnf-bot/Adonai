@@ -22,7 +22,7 @@ def compute_insights(df: pd.DataFrame) -> list:
 
     # ── Receita mensal recente ──
     monthly = (
-        df.groupby('AnoMesStr')['Vlr.Total'].sum()
+        df.groupby('AnoMesStr', observed=True)['Vlr.Total'].sum()
         .sort_index()
     )
 
@@ -52,16 +52,41 @@ def compute_insights(df: pd.DataFrame) -> list:
                     'positive',
                 ))
 
-    # ── Concentração ──
-    client_rev = df.groupby('GrupoEcon')['Vlr.Total'].sum()
-    total = client_rev.sum()
-    top10_pct = client_rev.nlargest(10).sum() / total * 100 if total > 0 else 0
+    # ── Concentração — alerta granular ──
+    client_rev = df.groupby('GrupoEcon', observed=True)['Vlr.Total'].sum()
+    total = float(client_rev.sum())
+    top1_pct  = float(client_rev.max()) / total * 100 if total > 0 else 0
+    top5_pct  = float(client_rev.nlargest(5).sum()) / total * 100 if total > 0 else 0
+    top10_pct = float(client_rev.nlargest(10).sum()) / total * 100 if total > 0 else 0
+    top1_nome = str(client_rev.idxmax()) if total > 0 else '—'
+
+    if top1_pct > 10:
+        insights.append(_item(
+            '🔴',
+            html.Span([
+                'Risco ALTO: ',
+                html.Strong(top1_nome),
+                f' representa {top1_pct:.1f}% da receita — concentração crítica em cliente único.',
+            ]),
+            'critical',
+        ))
+    elif top1_pct > 7:
+        insights.append(_item(
+            '⚠️',
+            html.Span([
+                'Alerta de concentração: ',
+                html.Strong(top1_nome),
+                f' representa {top1_pct:.1f}% da receita — monitorar dependência.',
+            ]),
+            'warning',
+        ))
+
     if top10_pct > 40:
         insights.append(_item(
             '⚠️',
             html.Span([
-                html.Strong(f'{top10_pct:.1f}%'),
-                ' da receita concentrada nos Top 10 clientes — risco de dependência.',
+                html.Strong(f'Top 10 clientes = {top10_pct:.1f}%'),
+                f' da receita (Top 5 = {top5_pct:.1f}%) — carteira com concentração relevante.',
             ]),
             'warning',
         ))
@@ -107,7 +132,7 @@ def compute_insights(df: pd.DataFrame) -> list:
 
     # ── Serviço em crescimento ──
     if len(monthly) >= 6:
-        prod_monthly = df.groupby(['AnoMesStr', 'Descricao'])['Vlr.Total'].sum().unstack(fill_value=0)
+        prod_monthly = df.groupby(['AnoMesStr', 'Descricao'], observed=True)['Vlr.Total'].sum().unstack(fill_value=0)
         recent_3 = prod_monthly.iloc[-3:].sum()
         prev_3 = prod_monthly.iloc[-6:-3].sum()
         growth = ((recent_3 - prev_3) / prev_3.replace(0, np.nan) * 100).dropna()

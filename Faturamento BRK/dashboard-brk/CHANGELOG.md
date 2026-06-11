@@ -48,7 +48,14 @@ Auditoria completa de código + inspeção visual página a página.
 - Removidas as colunas NFs, Serviços e Ticket Médio NF (pouco acionáveis)
 - Novas colunas: **Média 3M** + variação vs 3 meses anteriores e **Média 6M** +
   variação vs 6 meses anteriores (meses completos; variações em verde/vermelho)
-- Para reverter ao formato anterior: `git revert` deste commit
+- Tabela com **rolagem contínua virtualizada** no lugar da paginação
+  (sem fixed_rows: combinado com virtualization trava — bug do dash_table)
+- Var. M/M validada e mantida como mês vs mês anterior (decisão 11/06);
+  abr/26 vermelho é efeito do pico atípico de mar/26
+- KPI "Faturado no Ano" → **"Faturado 12 Meses"** (janela móvel) — alinha a
+  escada 1M/3M/6M/12M; o ano parcial aparecia menor que o 6M e confundia
+- Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
+- Para reverter qualquer item: `git revert` do commit correspondente
 
 ### Tema claro + 3 idiomas (11/06)
 - Seletores na barra de filtros: 🌙 Dark / ☀️ Light e 🇧🇷 PT / 🇺🇸 EN / 🇪🇸 ES,

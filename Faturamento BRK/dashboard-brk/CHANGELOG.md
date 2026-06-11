@@ -36,6 +36,14 @@ Auditoria completa de código + inspeção visual página a página.
 - Filtro de faixa de valor por GrupoEcon (consistente com filtro de cliente);
   float64 nas somas; subtítulos com contagem fixa removidos
 
+### Hover desalinhado em todos os gráficos (11/06)
+- **Causa**: `zoom: 0.85` global no CSS — o Plotly não compensa zoom CSS no
+  cálculo da posição do mouse; a caixinha de hover abria deslocada (mostrando
+  meses anteriores) e a primeira/última coluna ficava inacessível. Zoom
+  removido — **não reintroduzir**
+- Datas dos eixos e hovers em inglês ("Oct 1, 2024") → padronizadas em mm/aaaa
+  nos gráficos de série temporal
+
 ## Fase 2 — Dados e inteligência (04-10/06/2026)
 - Normalização: merge EBAZAR, 15 serviços com grafias unificadas, correção
   HEALTH LOGISTICA / JNTL (289 registros exatos)

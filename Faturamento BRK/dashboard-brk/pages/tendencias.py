@@ -478,7 +478,8 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         ))
         fig_heat.update_layout(
             title='Heatmap · Faturamento Mensal Top 50 Clientes (R$ K)',
-            xaxis=dict(tickfont=dict(size=9), title=''),
+            xaxis=dict(tickfont=dict(size=9), title='',
+                       tickformat='%m/%Y', hoverformat='%m/%Y'),
             yaxis=dict(tickfont=dict(size=9), title='', autorange='reversed'),
             height=440,
             margin=dict(l=180, r=30, t=50, b=40),
@@ -633,6 +634,7 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, produto, 
     fig_evo.update_layout(
         title=f'Evolução Mensal · {grupo}',
         xaxis_title='', yaxis_title='R$', yaxis_tickformat=',.0f',
+        xaxis=dict(tickformat='%m/%Y', hoverformat='%m/%Y'),
         legend=dict(orientation='h', y=1.1), height=300,
     )
 

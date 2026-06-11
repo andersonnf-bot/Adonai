@@ -273,6 +273,7 @@ def update_produto_detail(active_cell, table_data, start_date, end_date, anos, c
         title=f'Evolução Mensal · {servico}',
         yaxis=dict(title='Receita (R$)', tickformat=',.0f'),
         yaxis2=dict(title='Quantidade', overlaying='y', side='right', showgrid=False),
+        xaxis=dict(tickformat='%m/%Y', hoverformat='%m/%Y'),
         legend=dict(orientation='h', y=1.1),
         height=320,
     )
@@ -290,6 +291,7 @@ def update_produto_detail(active_cell, table_data, start_date, end_date, anos, c
         title='Ticket Médio ao Longo do Tempo (detectar reajustes)',
         xaxis_title='', yaxis_title='R$ / unidade',
         yaxis_tickformat=',.2f',
+        xaxis=dict(tickformat='%m/%Y', hoverformat='%m/%Y'),
         height=280,
     )
 

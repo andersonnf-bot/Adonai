@@ -1,7 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ── ZOOM GLOBAL 85% ── */
-html { zoom: 0.85; }
+/* zoom global REMOVIDO de propósito: o Plotly não compensa `zoom` no cálculo
+   da posição do mouse — o hover abria deslocado, mostrando meses anteriores
+   ao cursor, e a primeira/última coluna ficava inacessível. Não reintroduzir. */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

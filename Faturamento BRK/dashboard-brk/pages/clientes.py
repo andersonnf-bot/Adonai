@@ -224,6 +224,7 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, 
         title=f'Evolução Mensal · {nome}',
         xaxis_title='', yaxis_title='R$',
         yaxis_tickformat=',.0f',
+        xaxis=dict(tickformat='%m/%Y', hoverformat='%m/%Y'),
         height=300,
     )
 

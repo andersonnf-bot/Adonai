@@ -266,6 +266,8 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         title='Receita Mensal · Tendência + IC 80% (⚡ = pico atípico)',
         xaxis_title='', yaxis_title='R$',
         yaxis_tickformat=',.0f',
+        # mm/aaaa no eixo e no hover — o padrão do Plotly mostra meses em inglês
+        xaxis=dict(tickformat='%m/%Y', hoverformat='%m/%Y'),
         legend=dict(orientation='h', y=1.1),
         height=320,
     )

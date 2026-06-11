@@ -5,7 +5,7 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-from data.loader import get_liquid, apply_filters
+from data.loader import get_liquid, apply_filters, last_month_is_partial
 from components.kpis import kpi_card, kpi_grid
 from components.insights import insight_panel
 from components.theme import COLORS, fmt_brl, CHART_COLORS
@@ -51,7 +51,7 @@ layout = html.Div([
             html.Div([
                 html.Div([
                     html.Div('Composição por Serviço', className='chart-title'),
-                    html.Div('Treemap · todos os 204 serviços', className='chart-subtitle'),
+                    html.Div('Treemap · portfólio completo de serviços', className='chart-subtitle'),
                 ]),
             ], className='chart-card-header'),
             dcc.Graph(id='overview-chart-treemap', config={'displayModeBar': False}, style={'height': '420px'}),
@@ -94,6 +94,7 @@ layout = html.Div([
 
 
 @callback(
+    Output('overview-partial-tag', 'children'),
     Output('overview-kpis', 'children'),
     Output('overview-insights', 'children'),
     Output('overview-chart-monthly', 'figure'),
@@ -121,45 +122,54 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     monthly = df.groupby('AnoMesStr', observed=True)['Vlr.Total'].sum().sort_index()
     n = len(monthly)
 
+    # Mês parcial (export cortado no meio do mês) sai das comparações:
+    # senão MRR, trimestre e var. mensal apontam queda falsa todo início de mês
+    parcial = last_month_is_partial(df)
+    mes_parcial = str(monthly.index[-1]) if (parcial and n >= 1) else None
+    monthly_c = monthly.iloc[:-1] if (parcial and n >= 2) else monthly
+    nc = len(monthly_c)
+
     # 1. Receita Líquida
     receita_liquida = float(df[~df['Serie'].astype(str).isin({'RET', 'DAV'})]['Vlr.Total'].sum())
 
-    # 2. MRR — média dos últimos 3 meses
-    mrr = float(monthly.iloc[-3:].mean()) if n >= 3 else float(monthly.mean()) if n > 0 else 0.0
+    # 2. MRR — média dos últimos 3 meses completos
+    mrr = float(monthly_c.iloc[-3:].mean()) if nc >= 3 else float(monthly_c.mean()) if nc > 0 else 0.0
 
     # helper: variação %
     def _var(atual, anterior):
         return (atual - anterior) / anterior * 100 if anterior > 0 else None
 
-    # 3. Crescimento Anual (YoY) — ano atual vs ano anterior completo
+    # 3. Crescimento Anual — YTD vs mesmo período do ano anterior
+    # (comparar ano parcial contra ano-calendário completo distorce o sinal)
     now_ts  = pd.Timestamp(df['Emissao'].max())
     ano_cur = now_ts.year
+    corte_prev  = now_ts - pd.DateOffset(years=1)
     df_ano_cur  = df[df['Ano'] == ano_cur]
-    df_ano_prev = df[df['Ano'] == ano_cur - 1]
+    df_ano_prev = df[(df['Ano'] == ano_cur - 1) & (df['Emissao'] <= corte_prev)]
     fat_ano     = float(df_ano_cur['Vlr.Total'].sum())
     fat_ano_ant = float(df_ano_prev['Vlr.Total'].sum())
     delta_ano   = _var(fat_ano, fat_ano_ant)
 
-    # 4. Crescimento Semestral — últimos 6M vs 6M anteriores
-    fat_6m      = float(monthly.iloc[-6:].sum())  if n >= 6  else float(monthly.sum())
-    fat_6m_prev = float(monthly.iloc[-12:-6].sum()) if n >= 12 else float(monthly.iloc[:-6].sum()) if n >= 7 else 0.0
+    # 4. Crescimento Semestral — últimos 6M completos vs 6M anteriores
+    fat_6m      = float(monthly_c.iloc[-6:].sum())  if nc >= 6  else float(monthly_c.sum())
+    fat_6m_prev = float(monthly_c.iloc[-12:-6].sum()) if nc >= 12 else float(monthly_c.iloc[:-6].sum()) if nc >= 7 else 0.0
     delta_6m    = _var(fat_6m, fat_6m_prev)
 
-    # 5. Crescimento Trimestral — últimos 3M vs 3M anteriores
-    fat_3m      = float(monthly.iloc[-3:].sum())  if n >= 3 else float(monthly.sum())
-    fat_3m_prev = float(monthly.iloc[-6:-3].sum()) if n >= 6 else float(monthly.iloc[:-3].sum()) if n >= 4 else 0.0
+    # 5. Crescimento Trimestral — últimos 3M completos vs 3M anteriores
+    fat_3m      = float(monthly_c.iloc[-3:].sum())  if nc >= 3 else float(monthly_c.sum())
+    fat_3m_prev = float(monthly_c.iloc[-6:-3].sum()) if nc >= 6 else float(monthly_c.iloc[:-3].sum()) if nc >= 4 else 0.0
     delta_3m    = _var(fat_3m, fat_3m_prev)
 
-    # 6. Crescimento Mensal — último mês vs mês anterior
-    fat_1m      = float(monthly.iloc[-1]) if n >= 1 else 0.0
-    fat_1m_prev = float(monthly.iloc[-2]) if n >= 2 else 0.0
+    # 6. Crescimento Mensal — último mês completo vs anterior
+    fat_1m      = float(monthly_c.iloc[-1]) if nc >= 1 else 0.0
+    fat_1m_prev = float(monthly_c.iloc[-2]) if nc >= 2 else 0.0
     delta_1m    = _var(fat_1m, fat_1m_prev)
 
     # 7. Clientes no período selecionado
     clientes_periodo = int(df['GrupoEcon'].nunique())
 
-    # 8. Clientes faturados no último mês
-    ultimo_mes = monthly.index[-1] if n >= 1 else None
+    # 8. Clientes faturados no último mês completo
+    ultimo_mes = monthly_c.index[-1] if nc >= 1 else None
     clientes_ult_mes = int(
         df[df['AnoMesStr'].astype(str) == ultimo_mes]['GrupoEcon'].nunique()
     ) if ultimo_mes else 0
@@ -184,11 +194,11 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
 
     cards = kpi_grid([
         kpi_card('Receita Líquida',          receita_liquida,    '✅', None,      'excluindo RET e DAV'),
-        kpi_card('MRR',                      mrr,                '📅', None,      'média últimos 3 meses'),
-        kpi_card('Faturado no Ano',          fat_ano,            '📆', delta_ano, f'vs. {ano_cur - 1} completo'),
+        kpi_card('MRR',                      mrr,                '📅', None,      'média últimos 3 meses completos'),
+        kpi_card('Faturado no Ano',          fat_ano,            '📆', delta_ano, f'vs. mesmo período de {ano_cur - 1}'),
         kpi_card('Faturado 6 Meses',         fat_6m,             '📊', delta_6m,  'vs. 6 meses anteriores'),
         kpi_card('Faturado Trimestre',       fat_3m,             '📈', delta_3m,  'vs. trimestre anterior'),
-        kpi_card('Faturado Mês',             fat_1m,             '🗓️', delta_1m,  'vs. mês anterior'),
+        kpi_card('Faturado Mês',             fat_1m,             '🗓️', delta_1m,  f'{ultimo_mes or "—"} vs. mês anterior'),
         kpi_card('Clientes no Período',      clientes_periodo,   '🏢', None,      'grupos econômicos ativos', value_fmt='int'),
         kpi_card('Clientes Último Mês',      clientes_ult_mes,   '👥', None,      f'faturados em {ultimo_mes or "—"}', value_fmt='int'),
         kpi_card('Ticket Médio Cliente/Mês', ticket_cliente_mes, '🎯', None,      'receita ÷ clientes ÷ meses'),
@@ -200,16 +210,27 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     # ── Gráfico Mensal com Tendência + IC + Anotação Anomalia ──
     monthly_full = df.groupby('AnoMesStr', observed=True)['Vlr.Total'].sum().reset_index()
     monthly_full.columns = ['Mês', 'Receita']
+    # mês parcial aparece no gráfico (esmaecido), mas fica fora da tendência
+    n_fit = len(monthly_full) - (1 if parcial else 0)
+    opacidades = [0.85] * len(monthly_full)
+    if parcial and len(monthly_full) >= 1:
+        opacidades[-1] = 0.35
     fig_monthly = go.Figure()
     fig_monthly.add_trace(go.Bar(
         x=monthly_full['Mês'], y=monthly_full['Receita'],
         name='Receita', marker_color=COLORS['primary'],
-        marker_opacity=0.85,
+        marker_opacity=opacidades,
         hovertemplate='<b>%{x}</b><br>Receita: R$ %{y:,.0f}<extra></extra>',
     ))
-    if len(monthly_full) >= 6:
-        xs = np.arange(len(monthly_full))
-        ys = monthly_full['Receita'].values
+    if parcial and len(monthly_full) >= 1:
+        fig_monthly.add_annotation(
+            x=monthly_full['Mês'].iloc[-1], y=float(monthly_full['Receita'].iloc[-1]),
+            text='parcial', showarrow=False, yshift=12,
+            font=dict(size=10, color=COLORS['text_muted']),
+        )
+    if n_fit >= 6:
+        xs = np.arange(n_fit)
+        ys = monthly_full['Receita'].values[:n_fit]
         z    = np.polyfit(xs, ys, 1)
         poly = np.poly1d(z)
         trend  = poly(xs)
@@ -218,16 +239,17 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         std_res  = float(np.std(residuos))
         ic_upper = trend + 1.28 * std_res
         ic_lower = trend - 1.28 * std_res
-        # Banda de IC
+        # Banda de IC — eixo X recortado nos mesmos meses do ajuste (sem o parcial)
+        meses_fit = list(monthly_full['Mês'].iloc[:n_fit])
         fig_monthly.add_trace(go.Scatter(
-            x=list(monthly_full['Mês']) + list(monthly_full['Mês'])[::-1],
+            x=meses_fit + meses_fit[::-1],
             y=list(ic_upper) + list(ic_lower)[::-1],
             fill='toself', fillcolor='rgba(30,144,255,0.08)',
             line=dict(color='rgba(0,0,0,0)'),
             name='IC 80%', hoverinfo='skip',
         ))
         fig_monthly.add_trace(go.Scatter(
-            x=monthly_full['Mês'], y=trend,
+            x=meses_fit, y=trend,
             name='Tendência', line=dict(color=COLORS['info'], width=2, dash='dot'),
             hovertemplate='Tendência: R$ %{y:,.0f}<extra></extra>',
         ))
@@ -347,7 +369,10 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     client_rev['cumpct'] = client_rev['Vlr.Total'].cumsum() / total_rev * 100
 
     # ── Sazonalidade — receita média por mês (todos os anos) ──
+    # mês parcial fora da média: senão o mês corrente puxa a média para baixo
     df_saz = df.copy()
+    if parcial and mes_parcial:
+        df_saz = df_saz[df_saz['AnoMesStr'].astype(str) != mes_parcial]
     df_saz['mes_num'] = df_saz['Emissao'].dt.month
     saz = df_saz.groupby(['Ano', 'mes_num'], observed=True)['Vlr.Total'].sum().reset_index()
     saz_media = saz.groupby('mes_num')['Vlr.Total'].mean().reset_index()
@@ -380,7 +405,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     mes_forte = saz_media.loc[saz_media['Vlr.Total'].idxmax(), 'mes_label']
     mes_fraco = saz_media.loc[saz_media['Vlr.Total'].idxmin(), 'mes_label']
     fig_heat.update_layout(
-        title=f'Sazonalidade · Receita Média por Mês (🔵 acima da média) · Pico: {mes_forte} · Vale: {mes_fraco}',
+        title=f'Sazonalidade · Receita Média por Mês (🟠 acima da média) · Pico: {mes_forte} · Vale: {mes_fraco}',
         xaxis_title='', yaxis_title='R$',
         yaxis_tickformat=',.0f',
         showlegend=False,
@@ -419,4 +444,19 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         height=320,
     )
 
-    return cards, insights, fig_monthly, fig_yoy, fig_treemap, fig_conc, fig_heat, fig_cum
+    # ── Tag de mês parcial no cabeçalho ──
+    if parcial and mes_parcial:
+        ultimo_dia = df['Emissao'].max().strftime('%d/%m/%Y')
+        tag = html.Span(
+            f'⚠️ dados até {ultimo_dia} · {mes_parcial} é mês parcial '
+            f'(fora das variações e médias)',
+            style={
+                'fontSize': '11px', 'color': COLORS['warning'],
+                'border': f'1px solid {COLORS["warning"]}', 'borderRadius': '6px',
+                'padding': '4px 10px', 'whiteSpace': 'nowrap',
+            },
+        )
+    else:
+        tag = ''
+
+    return tag, cards, insights, fig_monthly, fig_yoy, fig_treemap, fig_conc, fig_heat, fig_cum

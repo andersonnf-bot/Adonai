@@ -5,7 +5,7 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-from data.loader import get_liquid, apply_filters
+from data.loader import get_liquid, apply_filters, last_month_is_partial
 from components.theme import (COLORS, fmt_brl, CHART_COLORS,
                               TBL_BRL, TBL_BRL_2, TBL_PCT, TBL_PCT_SIGNED, col_num)
 
@@ -32,7 +32,7 @@ _CELL = {
 layout = html.Div([
     html.Div([
         html.Div('Produtos & Serviços', className='page-title'),
-        html.Div('Análise completa do portfólio · 204 serviços', className='page-subtitle'),
+        html.Div('Análise completa do portfólio de serviços', className='page-subtitle'),
     ], className='page-header'),
 
     html.Div([
@@ -47,7 +47,7 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div('Ranking Completo de Serviços', className='chart-title'),
-                html.Div('Ordenável · todos os 204 serviços', className='chart-subtitle'),
+                html.Div('Ordenável · portfólio completo', className='chart-subtitle'),
             ], className='chart-card-header'),
             dash_table.DataTable(
                 id='produtos-table',
@@ -88,6 +88,9 @@ def update_produtos(start_date, end_date, anos, cliente, produto, valor_min, val
     monthly = df.groupby(['Descricao', 'AnoMesStr'])['Vlr.Total'].sum().unstack(fill_value=0)
     months_sorted = sorted(monthly.columns)
     monthly = monthly[months_sorted]
+    # variação M/M sobre meses completos — mês parcial geraria queda falsa
+    if last_month_is_partial(df) and len(months_sorted) >= 3:
+        months_sorted = months_sorted[:-1]
 
     agg = df.groupby('Descricao').agg(
         receita=('Vlr.Total', 'sum'),

@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 
-from data.loader import get_liquid, apply_filters
+from data.loader import get_liquid, apply_filters, last_month_is_partial
 from components.theme import (COLORS, fmt_brl, CHART_COLORS,
                               TBL_BRL, TBL_PCT, TBL_PCT_SIGNED, col_num)
 
@@ -108,6 +108,9 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
     monthly = df.groupby(['GrupoEcon', 'AnoMesStr'])['Vlr.Total'].sum().unstack(fill_value=0)
     months_sorted = sorted(monthly.columns)
     monthly = monthly[months_sorted]
+    # variação M/M sobre meses completos — mês parcial geraria queda falsa
+    if last_month_is_partial(df) and len(months_sorted) >= 3:
+        months_sorted = months_sorted[:-1]
 
     agg = df.groupby('GrupoEcon').agg(
         receita=('Vlr.Total', 'sum'),

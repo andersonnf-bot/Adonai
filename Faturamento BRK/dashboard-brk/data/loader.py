@@ -306,9 +306,10 @@ def load_data():
     df['Mes'] = df['Emissao'].dt.month.astype('Int64')
     df['AnoMesStr'] = df['Emissao'].dt.strftime('%Y-%m')
     df['Trimestre'] = df['Emissao'].dt.to_period('Q').astype(str)
-    df['Quantidade'] = pd.to_numeric(df['Quantidade'], errors='coerce').fillna(0).astype('float32')
-    df['Vlr.Total'] = pd.to_numeric(df['Vlr.Total'], errors='coerce').fillna(0).astype('float32')
-    df['Vlr.Unitario'] = pd.to_numeric(df['Vlr.Unitario'], errors='coerce').fillna(0).astype('float32')
+    # float64: em float32 a soma de R$ 604M acumula erro de arredondamento
+    df['Quantidade'] = pd.to_numeric(df['Quantidade'], errors='coerce').fillna(0).astype('float64')
+    df['Vlr.Total'] = pd.to_numeric(df['Vlr.Total'], errors='coerce').fillna(0).astype('float64')
+    df['Vlr.Unitario'] = pd.to_numeric(df['Vlr.Unitario'], errors='coerce').fillna(0).astype('float64')
 
     # Grupo econômico
     df['GrupoEcon'] = df['Nome'].apply(_extract_grupo)
@@ -355,7 +356,9 @@ def apply_filters(df, date_start=None, date_end=None, anos=None,
     if date_start:
         mask &= df['Emissao'] >= pd.to_datetime(date_start)
     if date_end:
-        mask &= df['Emissao'] <= pd.to_datetime(date_end)
+        # inclui o dia final inteiro — Emissao tem hora, e <= meia-noite
+        # descartava todas as NFs emitidas no próprio dia do corte
+        mask &= df['Emissao'] < pd.to_datetime(date_end) + pd.Timedelta(days=1)
     if anos:
         mask &= df['Ano'].isin([int(a) for a in anos])
 
@@ -374,17 +377,31 @@ def apply_filters(df, date_start=None, date_end=None, anos=None,
             mask &= df['Descricao'].str.contains(produto.strip().upper(), na=False)
 
     # range de faturamento por cliente total (filtra clientes pelo total acumulado)
+    # agrupa por GrupoEcon — consistente com o filtro de cliente
     vmin = _parse_valor(valor_min)
     vmax = _parse_valor(valor_max)
     if vmin is not None or vmax is not None:
-        client_totals = df[mask].groupby('Nome')['Vlr.Total'].sum()
+        client_totals = df[mask].groupby('GrupoEcon', observed=True)['Vlr.Total'].sum()
         if vmin is not None and vmin > 0:
             client_totals = client_totals[client_totals >= vmin]
         if vmax is not None and vmax > 0:
             client_totals = client_totals[client_totals <= vmax]
-        mask &= df['Nome'].isin(client_totals.index)
+        mask &= df['GrupoEcon'].isin(client_totals.index)
 
     return df[mask]
+
+
+def last_month_is_partial(df):
+    """True se o último mês dos dados estiver incompleto (export cortado no meio).
+
+    Variações M/M, status de queda e médias devem ignorar esse mês —
+    senão todo cliente parece "em queda" até o próximo export.
+    """
+    last = df['Emissao'].max()
+    if pd.isna(last):
+        return False
+    fim_do_mes = (last + pd.offsets.MonthEnd(0)).normalize()
+    return last.normalize() < fim_do_mes
 
 
 def get_date_bounds():

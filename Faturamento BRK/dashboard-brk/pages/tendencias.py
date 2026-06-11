@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 
-from data.loader import get_liquid, apply_filters
+from data.loader import get_liquid, apply_filters, last_month_is_partial
 from components.theme import (COLORS, fmt_brl, CHART_COLORS,
                               TBL_BRL, TBL_BRL_SIGNED, TBL_PCT, TBL_PCT_SIGNED, col_num)
 from components.kpis import kpi_card, kpi_grid
@@ -177,6 +177,10 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
     )
     months = sorted(monthly.columns)
     monthly = monthly.reindex(columns=months, fill_value=0)
+    # status, variações e recuperados usam só meses completos — o mês parcial
+    # faria a carteira inteira parecer "em queda" (heatmap continua mostrando todos)
+    if last_month_is_partial(df) and len(months) >= 3:
+        months = months[:-1]
     n = len(months)
 
     # ── Agregação base ──
@@ -290,8 +294,14 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
     recuperado = (st.str.contains('Recuperado')).sum()
 
     rec_expansao = float(agg.loc[agg['delta_abs'] > 0, 'delta_abs'].sum())
-    rec_risco    = float(agg.loc[
-        agg['Status'].str.contains('Queda|Risco|Inativo'), 'receita'
+    # receita em risco = últimos 12 meses dos clientes em queda/inativos
+    # (a receita histórica total inflava o número com clientes que já saíram há anos)
+    meses_12 = months[-12:] if n >= 12 else months
+    rec12 = monthly[meses_12].sum(axis=1)
+    agg['rec_12m'] = agg['GrupoEcon'].map(rec12).fillna(0.0)
+    total_12m = float(rec12.sum())
+    rec_risco = float(agg.loc[
+        agg['Status'].str.contains('Queda|Risco|Inativo'), 'rec_12m'
     ].sum())
     upsell_n = (agg['Upsell'] == '📈 Sim').sum()
 
@@ -303,7 +313,7 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         kpi_card('Novos',           novo,          '🆕', None, 'últimos 90 dias',           value_fmt='int'),
         kpi_card('Recuperados',     recuperado,    '🔄', None, 'retornaram após pausa',     value_fmt='int'),
         kpi_card('Receita em Expansão', rec_expansao, '💰', None, 'gerada por clientes em crescimento'),
-        kpi_card('Receita em Risco',    rec_risco,    '⚠️', None, 'clientes em queda/inativos'),
+        kpi_card('Receita em Risco',    rec_risco,    '⚠️', None, 'últimos 12M de clientes em queda/inativos'),
         kpi_card('Potencial Upsell',    upsell_n,     '📈', None, 'clientes com oportunidade', value_fmt='int'),
     ])
 
@@ -323,12 +333,13 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         ], className='insight-item positive'))
 
     if rec_risco > 0:
-        pct_r = rec_risco / total * 100 if total > 0 else 0
+        pct_r = rec_risco / total_12m * 100 if total_12m > 0 else 0
+        pct_r_str = f'{pct_r:.1f}'.replace('.', ',')
         insights_items.append(html.Div([
             html.Span('⚠️', className='insight-icon'),
             html.Div(html.Span([
                 'Receita em risco: ', html.Strong(fmt_brl(rec_risco)),
-                f' ({pct_r:.1f}% do faturamento) — clientes em queda ou inativos.'
+                f' ({pct_r_str}% do faturamento dos últimos 12 meses) — clientes em queda ou inativos.'
             ]), className='insight-text'),
         ], className='insight-item critical'))
 
@@ -343,12 +354,12 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
 
     criticos = agg[agg['Status'].str.contains('Risco') & (agg['pct'] > 2)]
     if not criticos.empty:
-        pct_crit = criticos['pct'].sum()
+        pct_crit = f"{criticos['pct'].sum():.1f}".replace('.', ',')
         insights_items.append(html.Div([
             html.Span('🔴', className='insight-icon'),
             html.Div(html.Span([
                 html.Strong(f'{len(criticos)} clientes críticos'),
-                f' representam {pct_crit:.1f}% da receita e estão em forte queda — ação imediata.'
+                f' representam {pct_crit}% da receita e estão em forte queda — ação imediata.'
             ]), className='insight-text'),
         ], className='insight-item critical'))
 

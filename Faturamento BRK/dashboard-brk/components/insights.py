@@ -2,6 +2,13 @@ import pandas as pd
 import numpy as np
 from dash import html
 
+from data.loader import last_month_is_partial
+
+
+def _pt(v, dec=1):
+    """Número com vírgula decimal (pt-BR)."""
+    return f'{v:.{dec}f}'.replace('.', ',')
+
 
 def _item(icon, text_html, kind='info'):
     return html.Div(
@@ -25,6 +32,9 @@ def compute_insights(df: pd.DataFrame) -> list:
         df.groupby('AnoMesStr', observed=True)['Vlr.Total'].sum()
         .sort_index()
     )
+    # mês parcial fora da comparação — evita alerta falso de queda
+    if last_month_is_partial(df) and len(monthly) >= 2:
+        monthly = monthly.iloc[:-1]
 
     if len(monthly) >= 3:
         last = monthly.iloc[-1]
@@ -36,8 +46,8 @@ def compute_insights(df: pd.DataFrame) -> list:
                     '🔴',
                     html.Span([
                         'Queda de ',
-                        html.Strong(f'{abs(delta):.1f}%'),
-                        f' na receita do último mês ({monthly.index[-1]}) vs. mês anterior.',
+                        html.Strong(f'{_pt(abs(delta))}%'),
+                        f' na receita do último mês completo ({monthly.index[-1]}) vs. mês anterior.',
                     ]),
                     'critical',
                 ))
@@ -46,8 +56,8 @@ def compute_insights(df: pd.DataFrame) -> list:
                     '🚀',
                     html.Span([
                         'Crescimento de ',
-                        html.Strong(f'{delta:.1f}%'),
-                        f' na receita do último mês ({monthly.index[-1]}) vs. mês anterior.',
+                        html.Strong(f'{_pt(delta)}%'),
+                        f' na receita do último mês completo ({monthly.index[-1]}) vs. mês anterior.',
                     ]),
                     'positive',
                 ))
@@ -66,7 +76,7 @@ def compute_insights(df: pd.DataFrame) -> list:
             html.Span([
                 'Risco ALTO: ',
                 html.Strong(top1_nome),
-                f' representa {top1_pct:.1f}% da receita — concentração crítica em cliente único.',
+                f' representa {_pt(top1_pct)}% da receita — concentração crítica em cliente único.',
             ]),
             'critical',
         ))
@@ -76,7 +86,7 @@ def compute_insights(df: pd.DataFrame) -> list:
             html.Span([
                 'Alerta de concentração: ',
                 html.Strong(top1_nome),
-                f' representa {top1_pct:.1f}% da receita — monitorar dependência.',
+                f' representa {_pt(top1_pct)}% da receita — monitorar dependência.',
             ]),
             'warning',
         ))
@@ -85,8 +95,8 @@ def compute_insights(df: pd.DataFrame) -> list:
         insights.append(_item(
             '⚠️',
             html.Span([
-                html.Strong(f'Top 10 clientes = {top10_pct:.1f}%'),
-                f' da receita (Top 5 = {top5_pct:.1f}%) — carteira com concentração relevante.',
+                html.Strong(f'Top 10 clientes = {_pt(top10_pct)}%'),
+                f' da receita (Top 5 = {_pt(top5_pct)}%) — carteira com concentração relevante.',
             ]),
             'warning',
         ))
@@ -133,19 +143,37 @@ def compute_insights(df: pd.DataFrame) -> list:
     # ── Serviço em crescimento ──
     if len(monthly) >= 6:
         prod_monthly = df.groupby(['AnoMesStr', 'Descricao'], observed=True)['Vlr.Total'].sum().unstack(fill_value=0)
+        # alinha aos meses completos (sem o parcial) usados acima
+        prod_monthly = prod_monthly.reindex(monthly.index, fill_value=0)
         recent_3 = prod_monthly.iloc[-3:].sum()
         prev_3 = prod_monthly.iloc[-6:-3].sum()
-        growth = ((recent_3 - prev_3) / prev_3.replace(0, np.nan) * 100).dropna()
+        # base mínima de R$ 50 mil — sem isso um serviço pequeno que cresce
+        # gera insight de "+7.500%"
+        base_ok = prev_3[prev_3 >= 50_000]
+        growth = ((recent_3[base_ok.index] - base_ok) / base_ok * 100).dropna()
         if not growth.empty:
             top_growth_svc = growth.idxmax()
             top_growth_val = growth.max()
-            if top_growth_val > 20:
+            if top_growth_val > 300:
+                # crescimento explosivo: % vira ruído — mostra os valores
+                from components.theme import fmt_brl as _brl
+                insights.append(_item(
+                    '📈',
+                    html.Span([
+                        'Serviço em forte expansão: ',
+                        html.Strong(top_growth_svc.title()),
+                        f' saltou de {_brl(float(base_ok[top_growth_svc]))} para '
+                        f'{_brl(float(recent_3[top_growth_svc]))} nos últimos 3 meses.',
+                    ]),
+                    'positive',
+                ))
+            elif top_growth_val > 20:
                 insights.append(_item(
                     '📈',
                     html.Span([
                         'Serviço em aceleração: ',
                         html.Strong(top_growth_svc.title()),
-                        f' (+{top_growth_val:.1f}% últimos 3 meses vs. anteriores).',
+                        f' (+{_pt(top_growth_val)}% últimos 3 meses vs. anteriores).',
                     ]),
                     'positive',
                 ))

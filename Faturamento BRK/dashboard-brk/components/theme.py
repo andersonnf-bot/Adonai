@@ -29,6 +29,8 @@ _template = go.layout.Template()
 _template.layout = go.Layout(
     paper_bgcolor=COLORS['surface'],
     plot_bgcolor=COLORS['surface'],
+    # pt-BR: vírgula decimal, ponto de milhar — vale para eixos e hovers de TODOS os gráficos
+    separators=',.',
     font=dict(family='Inter, sans-serif', color=COLORS['text'], size=12),
     colorway=CHART_COLORS,
     title=dict(font=dict(size=14, color=COLORS['text']), x=0.01, xanchor='left'),
@@ -72,7 +74,7 @@ pio.templates.default = 'nstech'
 def fmt_brl(value):
     v = float(value)  # garante compatibilidade com numpy float32/float64
     if v >= 1_000_000:
-        return f'R$ {v/1_000_000:.1f}M'
+        return f'R$ {v/1_000_000:.1f}M'.replace('.', ',')
     if v >= 1_000:
         return f'R$ {v/1_000:.0f}K'
     return f'R$ {v:.0f}'
@@ -81,7 +83,7 @@ def fmt_brl(value):
 def fmt_pct(value, decimals=1):
     if value is None or (isinstance(value, float) and np.isnan(value)):
         return '—'
-    return f'{value:+.{decimals}f}%'
+    return f'{value:+.{decimals}f}%'.replace('.', ',')
 
 
 def pct_color(value):

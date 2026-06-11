@@ -50,6 +50,8 @@ T = {
     'k_mrr_ctx':   ('média últimos 3 meses completos', 'average of last 3 full months', 'promedio últimos 3 meses completos'),
     'k_fano':      ('Faturado no Ano', 'Year to Date', 'Facturado en el Año'),
     'k_fano_ctx':  ('vs. mesmo período de {ano}', 'vs. same period in {ano}', 'vs. mismo período de {ano}'),
+    'k_f12m':      ('Faturado 12 Meses', 'Last 12 Months', 'Facturado 12 Meses'),
+    'k_f12m_ctx':  ('vs. 12 meses anteriores', 'vs. previous 12 months', 'vs. 12 meses anteriores'),
     'k_f6m':       ('Faturado 6 Meses', 'Last 6 Months', 'Facturado 6 Meses'),
     'k_f6m_ctx':   ('vs. 6 meses anteriores', 'vs. previous 6 months', 'vs. 6 meses anteriores'),
     'k_f3m':       ('Faturado Trimestre', 'Last Quarter', 'Facturado Trimestre'),

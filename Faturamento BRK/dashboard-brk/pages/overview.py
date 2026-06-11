@@ -153,16 +153,12 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     def _var(atual, anterior):
         return (atual - anterior) / anterior * 100 if anterior > 0 else None
 
-    # 3. Crescimento Anual — YTD vs mesmo período do ano anterior
-    # (comparar ano parcial contra ano-calendário completo distorce o sinal)
-    now_ts  = pd.Timestamp(df['Emissao'].max())
-    ano_cur = now_ts.year
-    corte_prev  = now_ts - pd.DateOffset(years=1)
-    df_ano_cur  = df[df['Ano'] == ano_cur]
-    df_ano_prev = df[(df['Ano'] == ano_cur - 1) & (df['Emissao'] <= corte_prev)]
-    fat_ano     = float(df_ano_cur['Vlr.Total'].sum())
-    fat_ano_ant = float(df_ano_prev['Vlr.Total'].sum())
-    delta_ano   = _var(fat_ano, fat_ano_ant)
+    # 3. Faturado 12 meses — janela móvel de meses completos vs 12M anteriores
+    # (alinha com as janelas de 1M/3M/6M; "ano-calendário parcial" confundia
+    # ao aparecer menor que o "6 meses")
+    fat_12m      = float(monthly_c.iloc[-12:].sum()) if nc >= 12 else float(monthly_c.sum())
+    fat_12m_prev = float(monthly_c.iloc[-24:-12].sum()) if nc >= 24 else 0.0
+    delta_12m    = _var(fat_12m, fat_12m_prev)
 
     # 4. Crescimento Semestral — últimos 6M completos vs 6M anteriores
     fat_6m      = float(monthly_c.iloc[-6:].sum())  if nc >= 6  else float(monthly_c.sum())
@@ -209,7 +205,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     cards = kpi_grid([
         kpi_card(t('k_rliq', lang),  receita_liquida,    '✅', None,      t('k_rliq_ctx', lang)),
         kpi_card('MRR',              mrr,                '📅', None,      t('k_mrr_ctx', lang)),
-        kpi_card(t('k_fano', lang),  fat_ano,            '📆', delta_ano, t('k_fano_ctx', lang, ano=ano_cur - 1)),
+        kpi_card(t('k_f12m', lang), fat_12m,             '📆', delta_12m, t('k_f12m_ctx', lang)),
         kpi_card(t('k_f6m', lang),   fat_6m,             '📊', delta_6m,  t('k_f6m_ctx', lang)),
         kpi_card(t('k_f3m', lang),   fat_3m,             '📈', delta_3m,  t('k_f3m_ctx', lang)),
         kpi_card(t('k_f1m', lang),   fat_1m,             '🗓️', delta_1m,  t('k_f1m_ctx', lang, mes=ultimo_mes or '—')),

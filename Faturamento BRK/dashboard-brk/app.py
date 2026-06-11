@@ -1,6 +1,9 @@
+import os
+
 import dash
 from dash import html, dcc, callback, Input, Output, State, ClientsideFunction
 import dash_bootstrap_components as dbc
+from flask import request, Response
 
 from components.theme import COLORS
 from components.navbar import build_navbar
@@ -20,6 +23,23 @@ app = dash.Dash(
 )
 
 server = app.server
+
+# ── Autenticação básica ──
+# Credenciais via variáveis de ambiente (Render → Environment), com padrão
+# para uso imediato. O navegador pede login uma vez e memoriza na sessão.
+_AUTH_USER = os.environ.get('DASH_USER', 'brk')
+_AUTH_PASS = os.environ.get('DASH_PASS', 'Nstech@2026')
+
+
+@server.before_request
+def _requer_login():
+    auth = request.authorization
+    if auth and auth.username == _AUTH_USER and auth.password == _AUTH_PASS:
+        return None
+    return Response(
+        'Acesso restrito · BRK Analytics', 401,
+        {'WWW-Authenticate': 'Basic realm="BRK Analytics"'},
+    )
 
 app.layout = html.Div(
     [

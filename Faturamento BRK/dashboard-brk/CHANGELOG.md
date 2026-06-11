@@ -44,6 +44,12 @@ Auditoria completa de código + inspeção visual página a página.
 - Datas dos eixos e hovers em inglês ("Oct 1, 2024") → padronizadas em mm/aaaa
   nos gráficos de série temporal
 
+### Autenticação (11/06)
+- Login básico (usuário/senha) em todo o dashboard — dados de faturamento
+  deixam de ficar públicos para quem tiver o link
+- Credenciais via variáveis de ambiente `DASH_USER` / `DASH_PASS` no Render
+  (padrão definido no código para uso imediato)
+
 ## Fase 2 — Dados e inteligência (04-10/06/2026)
 - Normalização: merge EBAZAR, 15 serviços com grafias unificadas, correção
   HEALTH LOGISTICA / JNTL (289 registros exatos)

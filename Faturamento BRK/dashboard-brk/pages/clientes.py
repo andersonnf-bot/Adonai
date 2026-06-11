@@ -13,7 +13,9 @@ from components.i18n import t
 dash.register_page(__name__, path='/clientes', name='Clientes', order=1)
 
 _TABLE_STYLE = {
-    'style_table': {'overflowX': 'auto', 'borderRadius': '8px'},
+    # rolagem contínua com cabeçalho fixo (sem paginação)
+    'style_table': {'overflowX': 'auto', 'borderRadius': '8px',
+                    'height': '640px', 'overflowY': 'auto'},
     'style_header': {
         'backgroundColor': COLORS['surface2'],
         'color': COLORS['text_secondary'],
@@ -75,7 +77,12 @@ layout = html.Div([
             ], className='chart-card-header'),
             dash_table.DataTable(
                 id='clientes-table',
-                page_size=20,
+                # rolagem em vez de páginas: virtualização renderiza só as
+                # linhas visíveis — suporta os ~2 mil clientes sem travar
+                # (sem fixed_rows: combinado com virtualization entra em loop
+                # de resize — bug do dash_table)
+                page_action='none',
+                virtualization=True,
                 sort_action='native',
                 filter_action='native',
                 filter_options={'case': 'insensitive'},
@@ -128,7 +135,10 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
     lang = lang or 'pt'
     pal  = get_palette(tema)
     ts   = table_styles(tema)
-    extras = (ts['style_header'], ts['style_cell'], _status_conditionals(pal),
+    # minWidth estabiliza as colunas durante a rolagem virtualizada
+    extras = (ts['style_header'],
+              {**ts['style_cell'], 'minWidth': '105px'},
+              _status_conditionals(pal),
               t('cl_title', lang), t('cl_sub', lang),
               t('cl_card', lang), t('cl_card_sub', lang))
     df_all = get_liquid()

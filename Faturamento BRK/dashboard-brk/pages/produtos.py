@@ -6,7 +6,8 @@ import pandas as pd
 import numpy as np
 
 from data.loader import get_liquid, apply_filters
-from components.theme import COLORS, fmt_brl, CHART_COLORS
+from components.theme import (COLORS, fmt_brl, CHART_COLORS,
+                              TBL_BRL, TBL_BRL_2, TBL_PCT, TBL_PCT_SIGNED, col_num)
 
 dash.register_page(__name__, path='/produtos', name='Produtos & Serviços', order=2)
 
@@ -128,21 +129,30 @@ def update_produtos(start_date, end_date, anos, cliente, produto, valor_min, val
     agg = agg.sort_values('receita', ascending=False).reset_index(drop=True)
     agg['Rank'] = agg.index + 1
 
-    # Bubble chart
-    bubble_data = agg[agg['receita'] > 0].copy()
+    # Bubble chart — corta receitas < R$ 1 mil: sem isso a escala log estica
+    # até microvalores (µ) e os ticks ficam ilegíveis
+    bubble_data = agg[agg['receita'] >= 1000].copy()
     bubble_data['var_mom_clean'] = bubble_data['var_mom'].fillna(0)
-    bubble_data['label_short'] = bubble_data['Descricao'].str[:30]
+    # outliers de variação (mudança de escopo, base pequena) esmagavam o eixo
+    bubble_data['var_plot'] = bubble_data['var_mom_clean'].clip(-100, 100)
+    # rótulo apenas nos 12 maiores — acima disso vira mancha ilegível
+    top_labels = set(bubble_data.nlargest(12, 'receita')['Descricao'])
+    bubble_data['label_short'] = np.where(
+        bubble_data['Descricao'].isin(top_labels),
+        bubble_data['Descricao'].str[:28], '',
+    )
 
     color_vals = bubble_data['var_mom_clean'].clip(-50, 50)
 
     fig_bubble = go.Figure(go.Scatter(
         x=bubble_data['receita'] / 1_000_000,
-        y=bubble_data['var_mom_clean'],
+        y=bubble_data['var_plot'],
         mode='markers+text',
         marker=dict(
             size=np.sqrt(bubble_data['quantidade'].clip(1)) * 0.8,
             sizemode='area',
             sizeref=2. * bubble_data['quantidade'].clip(1).max() ** 0.5 / (60 ** 2),
+            sizemin=4,
             color=color_vals,
             colorscale=[
                 [0, COLORS['danger']],
@@ -168,10 +178,13 @@ def update_produtos(start_date, end_date, anos, cliente, produto, valor_min, val
     fig_bubble.add_hline(y=0, line_dash='dot', line_color=COLORS['border'])
     fig_bubble.update_layout(
         title='Matriz Portfólio · Receita (R$MM) × Crescimento M/M% × Volume',
-        xaxis_title='Receita Total (R$ MM)',
-        yaxis_title='Variação M/M (%)',
+        xaxis_title='Receita Total (R$ MM · escala log)',
+        yaxis_title='Variação M/M (%, limitada a ±100)',
         height=430,
-        xaxis=dict(tickformat='.1f'),
+        # escala log espalha os serviços — antes 90% ficava amontoado perto do zero
+        # (sem tickformat fixo: em log os ticks variam ordens de magnitude)
+        xaxis=dict(type='log'),
+        yaxis=dict(range=[-115, 115]),
     )
 
     # Table
@@ -180,17 +193,28 @@ def update_produtos(start_date, end_date, anos, cliente, produto, valor_min, val
         records.append({
             '#': int(r['Rank']),
             'Serviço': r['Descricao'],
-            'Receita Total': f"R$ {r['receita']:,.0f}",
-            '% Portfólio': f"{r['pct']:.2f}%",
-            'Último Mês': f"R$ {r['ult_mes']:,.0f}" if pd.notna(r.get('ult_mes')) else '—',
-            'Var. M/M': f"{r['var_mom']:+.1f}%" if pd.notna(r['var_mom']) else '—',
-            'Var. 3M': f"{r['var_3m']:+.1f}%" if pd.notna(r['var_3m']) else '—',
+            'Receita Total': round(float(r['receita'])),
+            '% Portfólio': round(float(r['pct']), 2),
+            'Último Mês': round(float(r['ult_mes'])) if pd.notna(r.get('ult_mes')) else None,
+            'Var. M/M': round(float(r['var_mom']), 1) if pd.notna(r['var_mom']) else None,
+            'Var. 3M': round(float(r['var_3m']), 1) if pd.notna(r['var_3m']) else None,
             'Clientes': int(r['clientes']),
-            'Ticket Médio': f"R$ {r['ticket']:,.2f}" if pd.notna(r['ticket']) else '—',
+            'Ticket Médio': round(float(r['ticket']), 2) if pd.notna(r['ticket']) else None,
             'Status': r['Status'],
         })
 
-    columns = [{'name': c, 'id': c} for c in records[0].keys()] if records else []
+    columns = [
+        {'name': '#', 'id': '#', 'type': 'numeric'},
+        {'name': 'Serviço', 'id': 'Serviço', 'type': 'text'},
+        col_num('Receita Total', TBL_BRL),
+        col_num('% Portfólio', TBL_PCT),
+        col_num('Último Mês', TBL_BRL),
+        col_num('Var. M/M', TBL_PCT_SIGNED),
+        col_num('Var. 3M', TBL_PCT_SIGNED),
+        {'name': 'Clientes', 'id': 'Clientes', 'type': 'numeric'},
+        col_num('Ticket Médio', TBL_BRL_2),
+        {'name': 'Status', 'id': 'Status', 'type': 'text'},
+    ] if records else []
     return fig_bubble, records, columns
 
 
@@ -277,8 +301,8 @@ def update_produto_detail(active_cell, table_data, start_date, end_date, anos, c
     cli_svc['Receita'] = cli_svc['receita'].map(lambda v: f'R$ {v:,.0f}')
 
     cli_table = dash_table.DataTable(
-        data=cli_svc[['Nome', 'Receita', '%', 'quantidade', 'nfs']].rename(
-            columns={'Nome': 'Cliente', 'quantidade': 'Qtd', 'nfs': 'NFs'}
+        data=cli_svc[['GrupoEcon', 'Receita', '%', 'quantidade', 'nfs']].rename(
+            columns={'GrupoEcon': 'Cliente', 'quantidade': 'Qtd', 'nfs': 'NFs'}
         ).to_dict('records'),
         columns=[{'name': c, 'id': c} for c in ['Cliente', 'Receita', '%', 'Qtd', 'NFs']],
         page_size=15,

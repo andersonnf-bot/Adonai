@@ -5,7 +5,8 @@ import pandas as pd
 import numpy as np
 
 from data.loader import get_liquid, apply_filters
-from components.theme import COLORS, fmt_brl, CHART_COLORS
+from components.theme import (COLORS, fmt_brl, CHART_COLORS,
+                              TBL_BRL, TBL_PCT, TBL_PCT_SIGNED, col_num)
 
 dash.register_page(__name__, path='/clientes', name='Clientes', order=1)
 
@@ -143,19 +144,32 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
         records.append({
             '#': int(r['Rank']),
             'Cliente': r['GrupoEcon'] + novo_tag,
-            'Receita Total': f"R$ {r['receita']:,.0f}",
-            '% da Carteira': f"{r['pct_total']:.2f}%",
-            'Último Mês': f"R$ {r['ult_mes']:,.0f}" if pd.notna(r['ult_mes']) else '—',
-            'Var. M/M': f"{r['var_mom']:+.1f}%" if pd.notna(r['var_mom']) else '—',
+            'Receita Total': round(float(r['receita'])),
+            '% da Carteira': round(float(r['pct_total']), 2),
+            'Último Mês': round(float(r['ult_mes'])) if pd.notna(r['ult_mes']) else None,
+            'Var. M/M': round(float(r['var_mom']), 1) if pd.notna(r['var_mom']) else None,
             'NFs': int(r['nfs']),
             'Serviços': int(r['servicos']),
-            'Ticket Médio NF': f"R$ {r['ticket_medio']:,.0f}" if pd.notna(r['ticket_medio']) else '—',
+            'Ticket Médio NF': round(float(r['ticket_medio'])) if pd.notna(r['ticket_medio']) else None,
             'Última NF': r['ultima_nf'].strftime('%d/%m/%Y') if pd.notna(r['ultima_nf']) else '—',
-            'Dias sem NF': int(r['dias_sem_nf']) if pd.notna(r['dias_sem_nf']) else '—',
+            'Dias sem NF': int(r['dias_sem_nf']) if pd.notna(r['dias_sem_nf']) else None,
             'Status': r['Status'],
         })
 
-    columns = [{'name': c, 'id': c, 'type': 'text'} for c in records[0].keys()] if records else []
+    columns = [
+        {'name': '#', 'id': '#', 'type': 'numeric'},
+        {'name': 'Cliente', 'id': 'Cliente', 'type': 'text'},
+        col_num('Receita Total', TBL_BRL),
+        col_num('% da Carteira', TBL_PCT),
+        col_num('Último Mês', TBL_BRL),
+        col_num('Var. M/M', TBL_PCT_SIGNED),
+        {'name': 'NFs', 'id': 'NFs', 'type': 'numeric'},
+        {'name': 'Serviços', 'id': 'Serviços', 'type': 'numeric'},
+        col_num('Ticket Médio NF', TBL_BRL),
+        {'name': 'Última NF', 'id': 'Última NF', 'type': 'text'},
+        {'name': 'Dias sem NF', 'id': 'Dias sem NF', 'type': 'numeric'},
+        {'name': 'Status', 'id': 'Status', 'type': 'text'},
+    ] if records else []
 
     return records, columns
 

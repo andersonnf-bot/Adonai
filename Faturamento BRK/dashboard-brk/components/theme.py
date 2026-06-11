@@ -95,3 +95,36 @@ def pct_color(value):
 
 
 import numpy as np
+
+# ── Formatos numéricos pt-BR para dash_table ──
+# Colunas numéricas (em vez de strings "R$ 1,234") permitem ordenação correta
+from dash.dash_table.Format import Format, Group, Scheme, Sign, Symbol
+
+TBL_BRL = Format(
+    symbol=Symbol.yes, symbol_prefix='R$ ',
+    group=Group.yes, groups=3, group_delimiter='.', decimal_delimiter=',',
+    precision=0, scheme=Scheme.fixed,
+)
+TBL_BRL_2 = Format(
+    symbol=Symbol.yes, symbol_prefix='R$ ',
+    group=Group.yes, groups=3, group_delimiter='.', decimal_delimiter=',',
+    precision=2, scheme=Scheme.fixed,
+)
+TBL_BRL_SIGNED = Format(
+    symbol=Symbol.yes, symbol_prefix='R$ ',
+    group=Group.yes, groups=3, group_delimiter='.', decimal_delimiter=',',
+    precision=0, scheme=Scheme.fixed, sign=Sign.positive,
+)
+TBL_PCT = Format(
+    symbol=Symbol.yes, symbol_suffix='%',
+    decimal_delimiter=',', precision=2, scheme=Scheme.fixed,
+)
+TBL_PCT_SIGNED = Format(
+    symbol=Symbol.yes, symbol_suffix='%',
+    decimal_delimiter=',', precision=1, scheme=Scheme.fixed, sign=Sign.positive,
+)
+
+
+def col_num(name, fmt):
+    """Coluna numérica de dash_table com formato pt-BR."""
+    return {'name': name, 'id': name, 'type': 'numeric', 'format': fmt}

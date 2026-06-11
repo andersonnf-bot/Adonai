@@ -322,10 +322,13 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     top1_color = COLORS['danger'] if top1_pct > 10 else COLORS['warning'] if top1_pct > 7 else COLORS['success']
     risco_label = '🔴 Alto' if top1_pct > 10 else '🟡 Moderado' if top1_pct > 7 else '🟢 Saudável'
 
+    # sort=False mantém as fatias na ordem das faixas — senão o Plotly reordena
+    # por valor e as cores deixam de corresponder às faixas
     fig_conc = go.Figure(go.Pie(
         labels=faixas, values=slices,
         hole=0.55,
-        marker=dict(colors=[top1_color, COLORS['warning'], COLORS['primary'], COLORS['info'], COLORS['text_muted']]),
+        sort=False, direction='clockwise',
+        marker=dict(colors=[top1_color, COLORS['purple'], COLORS['primary'], COLORS['info'], COLORS['text_muted']]),
         textinfo='label+percent',
         hovertemplate='<b>%{label}</b><br>R$ %{value:,.0f}<br>%{percent}<extra></extra>',
     ))

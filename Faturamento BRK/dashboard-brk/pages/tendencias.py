@@ -5,7 +5,8 @@ import pandas as pd
 import numpy as np
 
 from data.loader import get_liquid, apply_filters
-from components.theme import COLORS, fmt_brl, CHART_COLORS
+from components.theme import (COLORS, fmt_brl, CHART_COLORS,
+                              TBL_BRL, TBL_BRL_SIGNED, TBL_PCT, TBL_PCT_SIGNED, col_num)
 from components.kpis import kpi_card, kpi_grid
 
 dash.register_page(__name__, path='/tendencias', name='Tendências', order=3)
@@ -394,11 +395,14 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
             continue
         fig_matrix.add_trace(go.Scatter(
             x=sub['pct'].astype(float),
-            y=sub['var_3m'].fillna(0).astype(float),
+            # variação limitada a ±200% — outliers esmagavam todos os pontos no eixo
+            y=sub['var_3m'].fillna(0).astype(float).clip(-100, 200),
             mode='markers',
             name=status,
             marker=dict(
-                size=np.sqrt(sub['receita'].astype(float).clip(1)) / 800,
+                # sizemin garante que clientes pequenos continuem visíveis
+                size=np.sqrt(sub['receita'].astype(float).clip(1)) / 250,
+                sizemin=5,
                 color=color,
                 opacity=0.82,
                 line=dict(color='rgba(255,255,255,0.15)', width=0.5),
@@ -435,7 +439,8 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
     fig_matrix.update_layout(
         title='Matriz de Ação Gerencial · % Receita × Crescimento 3M',
         xaxis_title='Participação na Receita (%)',
-        yaxis_title='Crescimento 3 Meses (%)',
+        yaxis_title='Crescimento 3 Meses (%, limitado a ±200)',
+        yaxis=dict(range=[-115, 215]),
         legend=dict(orientation='h', y=-0.18, font=dict(size=11)),
         height=440,
     )
@@ -527,22 +532,38 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         records.append({
             '#':              int(r['Rank']),
             'Cliente':        str(r['GrupoEcon']),
-            'Receita Total':  f"R$ {float(r['receita']):,.0f}",
-            'Rec. Período Ant.': f"R$ {float(r['rec_3m_prev']):,.0f}" if pd.notna(r.get('rec_3m_prev')) else '—',
-            'Var. R$':        f"R$ {float(r['delta_abs']):+,.0f}" if pd.notna(r.get('delta_abs')) else '—',
-            'Var. %':         f"{float(r['var_3m']):+.1f}%" if pd.notna(r['var_3m']) else '—',
+            'Receita Total':  round(float(r['receita'])),
+            'Rec. Período Ant.': round(float(r['rec_3m_prev'])) if pd.notna(r.get('rec_3m_prev')) else None,
+            'Var. R$':        round(float(r['delta_abs'])) if pd.notna(r.get('delta_abs')) else None,
+            'Var. %':         round(float(r['var_3m']), 1) if pd.notna(r['var_3m']) else None,
             'Status':         str(r['Status']),
             'HS':             int(r['HS']),
             'Health':         str(r['Health']),
             'Última Compra':  r['ultima_nf'].strftime('%d/%m/%Y') if pd.notna(r['ultima_nf']) else '—',
             'Dias s/ Compra': int(r['dias']),
             'Serviços':       int(r['servicos']),
-            'Part. %':        f"{float(r['pct']):.2f}%",
+            'Part. %':        round(float(r['pct']), 2),
             'Upsell':         str(r['Upsell']),
             'Cross-sell':     str(r['CrossSell']),
         })
 
-    cols = [{'name': c, 'id': c} for c in records[0].keys()] if records else []
+    cols = [
+        {'name': '#', 'id': '#', 'type': 'numeric'},
+        {'name': 'Cliente', 'id': 'Cliente', 'type': 'text'},
+        col_num('Receita Total', TBL_BRL),
+        col_num('Rec. Período Ant.', TBL_BRL),
+        col_num('Var. R$', TBL_BRL_SIGNED),
+        col_num('Var. %', TBL_PCT_SIGNED),
+        {'name': 'Status', 'id': 'Status', 'type': 'text'},
+        {'name': 'HS', 'id': 'HS', 'type': 'numeric'},
+        {'name': 'Health', 'id': 'Health', 'type': 'text'},
+        {'name': 'Última Compra', 'id': 'Última Compra', 'type': 'text'},
+        {'name': 'Dias s/ Compra', 'id': 'Dias s/ Compra', 'type': 'numeric'},
+        {'name': 'Serviços', 'id': 'Serviços', 'type': 'numeric'},
+        col_num('Part. %', TBL_PCT),
+        {'name': 'Upsell', 'id': 'Upsell', 'type': 'text'},
+        {'name': 'Cross-sell', 'id': 'Cross-sell', 'type': 'text'},
+    ] if records else []
 
     return kpis, insights, fig_matrix, fig_heat, fig_top, fig_bot, records, cols
 
@@ -648,7 +669,7 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, produto, 
             ]),
             html.Div([
                 html.Span(fmt_brl(rec_total), style={'fontSize': '22px', 'fontWeight': '800', 'color': COLORS['primary']}),
-                html.Span(f" · {row['Part. %']} da carteira", style={'color': COLORS['text_secondary'], 'fontSize': '12px', 'marginLeft': '8px'}),
+                html.Span(f" · {float(row['Part. %']):.2f}% da carteira".replace('.', ','), style={'color': COLORS['text_secondary'], 'fontSize': '12px', 'marginLeft': '8px'}),
             ]),
         ], style={
             'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center',

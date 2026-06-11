@@ -46,13 +46,20 @@ _TABLE_STYLE = {
 
 
 def _status_conditionals(pal):
-    return [
+    cond = [
         {'if': {'row_index': 'odd'}, 'backgroundColor': pal['surface2']},
         {'if': {'filter_query': '{Status} contains "🚀"'}, 'color': pal['success']},
         {'if': {'filter_query': '{Status} contains "🔴"'}, 'color': '#FF8080'},
         {'if': {'filter_query': '{Status} contains "⚫"'}, 'color': pal['text_muted']},
         {'if': {'filter_query': '{Status} contains "📉"'}, 'color': pal['danger']},
     ]
+    # variações: verde quando positivas, vermelho quando negativas
+    for c in ('Var. M/M', 'Var. 3M', 'Var. 6M'):
+        cond.append({'if': {'filter_query': f'{{{c}}} > 0', 'column_id': c},
+                     'color': pal['success']})
+        cond.append({'if': {'filter_query': f'{{{c}}} < 0', 'column_id': c},
+                     'color': pal['danger']})
+    return cond
 
 layout = html.Div([
     html.Div([
@@ -157,6 +164,26 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
         agg['pen_mes'] = np.nan
         agg['var_mom'] = np.nan
 
+    # médias móveis de faturamento (meses completos) + variação vs janela anterior
+    def _janela(ini, fim):
+        cols = months_sorted[ini:fim] if fim else months_sorted[ini:]
+        return monthly[cols].sum(axis=1) if cols else None
+
+    nm = len(months_sorted)
+    for tam, alvo_media, alvo_var in ((3, 'media_3m', 'var_3m'), (6, 'media_6m', 'var_6m')):
+        if nm >= tam:
+            atual = _janela(-tam, None)
+            agg[alvo_media] = agg['GrupoEcon'].map(atual / tam)
+            if nm >= 2 * tam:
+                anterior = _janela(-2 * tam, -tam)
+                var = (atual / anterior.replace(0, np.nan) - 1) * 100
+                agg[alvo_var] = agg['GrupoEcon'].map(var)
+            else:
+                agg[alvo_var] = np.nan
+        else:
+            agg[alvo_media] = np.nan
+            agg[alvo_var] = np.nan
+
     agg['dias_sem_nf'] = (now - agg['ultima_nf']).dt.days
     agg['ticket_medio'] = agg['receita'] / agg['nfs'].replace(0, np.nan)
     agg['Status'] = agg.apply(_compute_status, axis=1, now=now, lang=lang)
@@ -178,9 +205,10 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
             '% da Carteira': round(float(r['pct_total']), 2),
             'Último Mês': round(float(r['ult_mes'])) if pd.notna(r['ult_mes']) else None,
             'Var. M/M': round(float(r['var_mom']), 1) if pd.notna(r['var_mom']) else None,
-            'NFs': int(r['nfs']),
-            'Serviços': int(r['servicos']),
-            'Ticket Médio NF': round(float(r['ticket_medio'])) if pd.notna(r['ticket_medio']) else None,
+            'Média 3M': round(float(r['media_3m'])) if pd.notna(r['media_3m']) else None,
+            'Var. 3M': round(float(r['var_3m']), 1) if pd.notna(r['var_3m']) else None,
+            'Média 6M': round(float(r['media_6m'])) if pd.notna(r['media_6m']) else None,
+            'Var. 6M': round(float(r['var_6m']), 1) if pd.notna(r['var_6m']) else None,
             'Última NF': r['ultima_nf'].strftime('%d/%m/%Y') if pd.notna(r['ultima_nf']) else '—',
             'Dias sem NF': int(r['dias_sem_nf']) if pd.notna(r['dias_sem_nf']) else None,
             'Status': r['Status'],
@@ -193,9 +221,10 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
         {'name': t('col_pct_cart', lang), 'id': '% da Carteira', 'type': 'numeric', 'format': TBL_PCT},
         {'name': t('col_ult_mes', lang), 'id': 'Último Mês', 'type': 'numeric', 'format': TBL_BRL},
         {'name': t('col_var_mm', lang), 'id': 'Var. M/M', 'type': 'numeric', 'format': TBL_PCT_SIGNED},
-        {'name': t('col_nfs', lang), 'id': 'NFs', 'type': 'numeric'},
-        {'name': t('col_serv', lang), 'id': 'Serviços', 'type': 'numeric'},
-        {'name': t('col_ticket_nf', lang), 'id': 'Ticket Médio NF', 'type': 'numeric', 'format': TBL_BRL},
+        {'name': t('col_media_3m', lang), 'id': 'Média 3M', 'type': 'numeric', 'format': TBL_BRL},
+        {'name': t('col_var_3m_c', lang), 'id': 'Var. 3M', 'type': 'numeric', 'format': TBL_PCT_SIGNED},
+        {'name': t('col_media_6m', lang), 'id': 'Média 6M', 'type': 'numeric', 'format': TBL_BRL},
+        {'name': t('col_var_6m_c', lang), 'id': 'Var. 6M', 'type': 'numeric', 'format': TBL_PCT_SIGNED},
         {'name': t('col_ult_nf', lang), 'id': 'Última NF', 'type': 'text'},
         {'name': t('col_dias', lang), 'id': 'Dias sem NF', 'type': 'numeric'},
         {'name': t('col_status', lang), 'id': 'Status', 'type': 'text'},

@@ -44,6 +44,12 @@ Auditoria completa de código + inspeção visual página a página.
 - Datas dos eixos e hovers em inglês ("Oct 1, 2024") → padronizadas em mm/aaaa
   nos gráficos de série temporal
 
+### Etapa 2 — Análise de Clientes repaginada (11/06)
+- Removidas as colunas NFs, Serviços e Ticket Médio NF (pouco acionáveis)
+- Novas colunas: **Média 3M** + variação vs 3 meses anteriores e **Média 6M** +
+  variação vs 6 meses anteriores (meses completos; variações em verde/vermelho)
+- Para reverter ao formato anterior: `git revert` deste commit
+
 ### Tema claro + 3 idiomas (11/06)
 - Seletores na barra de filtros: 🌙 Dark / ☀️ Light e 🇧🇷 PT / 🇺🇸 EN / 🇪🇸 ES,
   memorizados pelo navegador de cada usuário

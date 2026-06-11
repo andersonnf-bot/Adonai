@@ -44,6 +44,16 @@ Auditoria completa de código + inspeção visual página a página.
 - Datas dos eixos e hovers em inglês ("Oct 1, 2024") → padronizadas em mm/aaaa
   nos gráficos de série temporal
 
+### Tema claro + 3 idiomas (11/06)
+- Seletores na barra de filtros: 🌙 Dark / ☀️ Light e 🇧🇷 PT / 🇺🇸 EN / 🇪🇸 ES,
+  memorizados pelo navegador de cada usuário
+- Tema claro completo: CSS por variáveis (`data-theme` no shell), template
+  Plotly `nstech_light`, estilos de tabela por tema
+- i18n em `components/i18n.py` (~150 chaves × 3 idiomas): navegação, filtros,
+  KPIs, títulos de gráficos, colunas, status e insights traduzidos
+- Status nas tabelas marcados por emoji (independem do idioma para as cores)
+- Login dispensado em localhost (fora do Render) — facilita uso local e dev
+
 ### Autenticação (11/06)
 - Login básico (usuário/senha) em todo o dashboard — dados de faturamento
   deixam de ficar públicos para quem tiver o link

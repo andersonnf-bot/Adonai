@@ -6,7 +6,9 @@ import numpy as np
 
 from data.loader import get_liquid, apply_filters, last_month_is_partial
 from components.theme import (COLORS, fmt_brl, CHART_COLORS,
-                              TBL_BRL, TBL_PCT, TBL_PCT_SIGNED, col_num)
+                              TBL_BRL, TBL_PCT, TBL_PCT_SIGNED, col_num,
+                              get_palette, plotly_template, table_styles)
+from components.i18n import t
 
 dash.register_page(__name__, path='/clientes', name='Clientes', order=1)
 
@@ -35,24 +37,34 @@ _TABLE_STYLE = {
     },
     'style_data_conditional': [
         {'if': {'row_index': 'odd'}, 'backgroundColor': COLORS['surface2']},
-        {'if': {'filter_query': '{Status} = "🚀 Crescendo"'}, 'color': COLORS['success']},
-        {'if': {'filter_query': '{Status} = "🔴 Churn Risk"'}, 'color': '#FF8080'},
-        {'if': {'filter_query': '{Status} = "⚫ Inativo"'}, 'color': COLORS['text_muted']},
-        {'if': {'filter_query': '{Status} = "📉 Em queda"'}, 'color': COLORS['danger']},
+        {'if': {'filter_query': '{Status} contains "🚀"'}, 'color': COLORS['success']},
+        {'if': {'filter_query': '{Status} contains "🔴"'}, 'color': '#FF8080'},
+        {'if': {'filter_query': '{Status} contains "⚫"'}, 'color': COLORS['text_muted']},
+        {'if': {'filter_query': '{Status} contains "📉"'}, 'color': COLORS['danger']},
     ],
 }
 
+
+def _status_conditionals(pal):
+    return [
+        {'if': {'row_index': 'odd'}, 'backgroundColor': pal['surface2']},
+        {'if': {'filter_query': '{Status} contains "🚀"'}, 'color': pal['success']},
+        {'if': {'filter_query': '{Status} contains "🔴"'}, 'color': '#FF8080'},
+        {'if': {'filter_query': '{Status} contains "⚫"'}, 'color': pal['text_muted']},
+        {'if': {'filter_query': '{Status} contains "📉"'}, 'color': pal['danger']},
+    ]
+
 layout = html.Div([
     html.Div([
-        html.Div('Análise de Clientes', className='page-title'),
-        html.Div(f'Todos os clientes · faturamento completo por período', className='page-subtitle'),
+        html.Div('Análise de Clientes', id='cl-title', className='page-title'),
+        html.Div('Todos os clientes · faturamento completo por período', id='cl-sub', className='page-subtitle'),
     ], className='page-header'),
 
     html.Div([
         html.Div([
             html.Div([
-                html.Div('Receita Total por Cliente', className='chart-title'),
-                html.Div('Ranking completo · ordenável · paginado', className='chart-subtitle'),
+                html.Div('Receita Total por Cliente', id='cl-c1t', className='chart-title'),
+                html.Div('Ranking completo · ordenável · paginado', id='cl-c1s', className='chart-subtitle'),
             ], className='chart-card-header'),
             dash_table.DataTable(
                 id='clientes-table',
@@ -71,23 +83,28 @@ layout = html.Div([
 ], id='page-content')
 
 
-def _compute_status(row, now):
+def _compute_status(row, now, lang='pt'):
     dias = (now - row['ultima_nf']).days if pd.notna(row['ultima_nf']) else 9999
     mom = row['var_mom']
     if dias >= 180:
-        return '⚫ Inativo'
+        return t('st_inativo', lang)
     if dias >= 60:
-        return '🔴 Churn Risk'
+        return t('st_churn', lang)
     if pd.notna(mom) and mom >= 15:
-        return '🚀 Crescendo'
+        return t('st_cresc', lang)
     if pd.notna(mom) and mom <= -15:
-        return '📉 Em queda'
-    return '➡️ Estável'
+        return t('st_queda', lang)
+    return t('st_estavel', lang)
 
 
 @callback(
     Output('clientes-table', 'data'),
     Output('clientes-table', 'columns'),
+    Output('clientes-table', 'style_header'),
+    Output('clientes-table', 'style_cell'),
+    Output('clientes-table', 'style_data_conditional'),
+    Output('cl-title', 'children'), Output('cl-sub', 'children'),
+    Output('cl-c1t', 'children'), Output('cl-c1s', 'children'),
     Input('filter-date', 'start_date'),
     Input('filter-date', 'end_date'),
     Input('filter-ano', 'value'),
@@ -95,13 +112,23 @@ def _compute_status(row, now):
     Input('filter-produto', 'value'),
     Input('filter-valor-min', 'value'),
     Input('filter-valor-max', 'value'),
+    Input('theme-select', 'value'),
+    Input('lang-select', 'value'),
 )
-def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
+def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_max,
+                 tema, lang):
+    tema = tema or 'dark'
+    lang = lang or 'pt'
+    pal  = get_palette(tema)
+    ts   = table_styles(tema)
+    extras = (ts['style_header'], ts['style_cell'], _status_conditionals(pal),
+              t('cl_title', lang), t('cl_sub', lang),
+              t('cl_card', lang), t('cl_card_sub', lang))
     df_all = get_liquid()
     df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
 
     if df.empty:
-        return [], []
+        return [], [], *extras
 
     now = df['Emissao'].max()
 
@@ -132,7 +159,7 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
 
     agg['dias_sem_nf'] = (now - agg['ultima_nf']).dt.days
     agg['ticket_medio'] = agg['receita'] / agg['nfs'].replace(0, np.nan)
-    agg['Status'] = agg.apply(_compute_status, axis=1, now=now)
+    agg['Status'] = agg.apply(_compute_status, axis=1, now=now, lang=lang)
     agg['Novo'] = (agg['primeira_nf'] >= now - pd.Timedelta(days=90))
 
     total = agg['receita'].sum()
@@ -161,20 +188,20 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
 
     columns = [
         {'name': '#', 'id': '#', 'type': 'numeric'},
-        {'name': 'Cliente', 'id': 'Cliente', 'type': 'text'},
-        col_num('Receita Total', TBL_BRL),
-        col_num('% da Carteira', TBL_PCT),
-        col_num('Último Mês', TBL_BRL),
-        col_num('Var. M/M', TBL_PCT_SIGNED),
-        {'name': 'NFs', 'id': 'NFs', 'type': 'numeric'},
-        {'name': 'Serviços', 'id': 'Serviços', 'type': 'numeric'},
-        col_num('Ticket Médio NF', TBL_BRL),
-        {'name': 'Última NF', 'id': 'Última NF', 'type': 'text'},
-        {'name': 'Dias sem NF', 'id': 'Dias sem NF', 'type': 'numeric'},
-        {'name': 'Status', 'id': 'Status', 'type': 'text'},
+        {'name': t('col_cliente', lang), 'id': 'Cliente', 'type': 'text'},
+        {'name': t('col_rtotal', lang), 'id': 'Receita Total', 'type': 'numeric', 'format': TBL_BRL},
+        {'name': t('col_pct_cart', lang), 'id': '% da Carteira', 'type': 'numeric', 'format': TBL_PCT},
+        {'name': t('col_ult_mes', lang), 'id': 'Último Mês', 'type': 'numeric', 'format': TBL_BRL},
+        {'name': t('col_var_mm', lang), 'id': 'Var. M/M', 'type': 'numeric', 'format': TBL_PCT_SIGNED},
+        {'name': t('col_nfs', lang), 'id': 'NFs', 'type': 'numeric'},
+        {'name': t('col_serv', lang), 'id': 'Serviços', 'type': 'numeric'},
+        {'name': t('col_ticket_nf', lang), 'id': 'Ticket Médio NF', 'type': 'numeric', 'format': TBL_BRL},
+        {'name': t('col_ult_nf', lang), 'id': 'Última NF', 'type': 'text'},
+        {'name': t('col_dias', lang), 'id': 'Dias sem NF', 'type': 'numeric'},
+        {'name': t('col_status', lang), 'id': 'Status', 'type': 'text'},
     ] if records else []
 
-    return records, columns
+    return records, columns, *extras
 
 
 @callback(
@@ -188,12 +215,19 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
     Input('filter-produto', 'value'),
     Input('filter-valor-min', 'value'),
     Input('filter-valor-max', 'value'),
+    Input('theme-select', 'value'),
+    Input('lang-select', 'value'),
 )
-def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, produto, valor_min, valor_max):
+def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, produto, valor_min, valor_max,
+                  tema, lang):
+    tema = tema or 'dark'
+    lang = lang or 'pt'
+    ts   = table_styles(tema)
+    pal  = get_palette(tema)
     if not active_cell or not table_data:
         return html.Div(
-            '👆 Clique em um cliente na tabela para ver análise detalhada.',
-            style={'color': COLORS['text_muted'], 'padding': '16px', 'fontSize': '13px'},
+            t('cl_clique', lang),
+            style={'color': pal['text_muted'], 'padding': '16px', 'fontSize': '13px'},
         )
 
     row = table_data[active_cell['row']]
@@ -204,7 +238,7 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, 
 
     df_cli = df_base[df_base['GrupoEcon'] == nome]
     if df_cli.empty:
-        return html.Div('Sem dados para este cliente no período.', style={'color': COLORS['text_muted']})
+        return html.Div(t('cl_sem', lang), style={'color': pal['text_muted']})
 
     # Evolução mensal
     monthly = df_cli.groupby('AnoMesStr')['Vlr.Total'].sum().sort_index().reset_index()
@@ -221,7 +255,8 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, 
         hovertemplate='<b>%{x}</b><br>Receita: R$ %{y:,.0f}<extra></extra>',
     ))
     fig_evo.update_layout(
-        title=f'Evolução Mensal · {nome}',
+        template=plotly_template(tema),
+        title=t('d_evo_de', lang, nome=nome),
         xaxis_title='', yaxis_title='R$',
         yaxis_tickformat=',.0f',
         xaxis=dict(tickformat='%m/%Y', hoverformat='%m/%Y'),
@@ -238,7 +273,8 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, 
         textinfo='label+percent',
     ))
     fig_mix.update_layout(
-        title=f'Mix de Serviços · {nome}',
+        template=plotly_template(tema),
+        title=t('d_mix_de', lang, nome=nome),
         height=350,
         showlegend=True,
         legend=dict(font=dict(size=10)),
@@ -253,13 +289,17 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, 
 
     svc_table = dash_table.DataTable(
         data=svc_records,
-        columns=[{'name': c, 'id': c} for c in ['Serviço', 'Receita', '% do Cliente']],
+        columns=[
+            {'name': t('col_servico', lang), 'id': 'Serviço'},
+            {'name': t('col_rtotal', lang), 'id': 'Receita'},
+            {'name': t('col_pct_cli', lang), 'id': '% do Cliente'},
+        ],
         page_size=15,
         sort_action='native',
         style_table={'borderRadius': '8px', 'overflowX': 'auto'},
-        style_header={**_TABLE_STYLE['style_header']},
-        style_cell={**_TABLE_STYLE['style_cell']},
-        style_data_conditional=_TABLE_STYLE['style_data_conditional'],
+        style_header=ts['style_header'],
+        style_cell=ts['style_cell'],
+        style_data_conditional=[ts['zebra']],
     )
 
     # Todas as NFs
@@ -275,38 +315,45 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, 
 
     nfs_table = dash_table.DataTable(
         data=nfs_records,
-        columns=[{'name': c, 'id': c} for c in ['Número NF', 'Data', 'Serie', 'Valor', 'Itens']],
+        columns=[
+            {'name': t('col_num_nf', lang), 'id': 'Número NF'},
+            {'name': t('col_data', lang), 'id': 'Data'},
+            {'name': 'Serie', 'id': 'Serie'},
+            {'name': t('col_valor', lang), 'id': 'Valor'},
+            {'name': t('col_itens', lang), 'id': 'Itens'},
+        ],
         page_size=10,
         sort_action='native',
         style_table={'borderRadius': '8px', 'overflowX': 'auto'},
-        style_header={**_TABLE_STYLE['style_header']},
-        style_cell={**_TABLE_STYLE['style_cell']},
-        style_data_conditional=_TABLE_STYLE['style_data_conditional'],
+        style_header=ts['style_header'],
+        style_cell=ts['style_cell'],
+        style_data_conditional=[ts['zebra']],
     )
 
     receita_total_cli = df_cli['Vlr.Total'].sum()
     receita_total_cart = df_base['Vlr.Total'].sum()
     pct_carteira = receita_total_cli / receita_total_cart * 100 if receita_total_cart > 0 else 0
 
+    pct_fmt = f'{pct_carteira:.2f}'.replace('.', ',')
     return html.Div([
         html.Div([
-            html.Div(nome, style={'fontSize': '16px', 'fontWeight': '700', 'color': COLORS['text']}),
+            html.Div(nome, className='detail-name'),
             html.Div([
-                html.Span(f'{fmt_brl(receita_total_cli)}', style={'fontSize': '20px', 'fontWeight': '700', 'color': COLORS['primary']}),
-                html.Span(f' · {pct_carteira:.2f}% da carteira', style={'fontSize': '13px', 'color': COLORS['text_secondary'], 'marginLeft': '8px'}),
+                html.Span(f'{fmt_brl(receita_total_cli)}', className='detail-val'),
+                html.Span(t('d_carteira', lang, pct=pct_fmt), className='detail-ctx'),
             ]),
-        ], style={'marginBottom': '20px', 'paddingBottom': '16px', 'borderBottom': f'1px solid {COLORS["border"]}'}),
+        ], style={'marginBottom': '20px', 'paddingBottom': '16px', 'borderBottom': f'1px solid {pal["border"]}'}),
 
         html.Div([
             html.Div([
                 html.Div([
-                    html.Div('Evolução Mensal', className='chart-title'),
+                    html.Div(t('d_evolucao', lang), className='chart-title'),
                 ], className='chart-card-header'),
                 dcc.Graph(figure=fig_evo, config={'displayModeBar': False}),
             ], className='chart-card'),
             html.Div([
                 html.Div([
-                    html.Div('Mix de Serviços', className='chart-title'),
+                    html.Div(t('d_mix', lang), className='chart-title'),
                 ], className='chart-card-header'),
                 dcc.Graph(figure=fig_mix, config={'displayModeBar': False}),
             ], className='chart-card'),
@@ -315,13 +362,13 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, cliente, 
         html.Div([
             html.Div([
                 html.Div([
-                    html.Div('Todos os Serviços Contratados', className='chart-title'),
+                    html.Div(t('d_serv_contr', lang), className='chart-title'),
                 ], className='chart-card-header'),
                 svc_table,
             ], className='chart-card'),
             html.Div([
                 html.Div([
-                    html.Div('Notas Fiscais Emitidas', className='chart-title'),
+                    html.Div(t('d_nfs', lang), className='chart-title'),
                 ], className='chart-card-header'),
                 nfs_table,
             ], className='chart-card'),

@@ -8,6 +8,7 @@ from flask import request, Response
 from components.theme import COLORS
 from components.navbar import build_navbar
 from components.filters import build_filter_bar
+from components.i18n import t
 
 app = dash.Dash(
     __name__,
@@ -33,6 +34,9 @@ _AUTH_PASS = os.environ.get('DASH_PASS', 'Nstech@2026')
 
 @server.before_request
 def _requer_login():
+    # localhost dispensa login (apenas fora do Render — lá a env RENDER existe)
+    if os.environ.get('RENDER') is None and request.remote_addr in ('127.0.0.1', '::1'):
+        return None
     auth = request.authorization
     if auth and auth.username == _AUTH_USER and auth.password == _AUTH_PASS:
         return None
@@ -44,6 +48,7 @@ def _requer_login():
 app.layout = html.Div(
     [
         dcc.Location(id='url', refresh=False),
+        html.Div(id='theme-dummy', style={'display': 'none'}),
         html.Div(id='sidebar-container'),
         html.Div(
             [
@@ -63,9 +68,49 @@ app.layout = html.Div(
 @callback(
     Output('sidebar-container', 'children'),
     Input('url', 'pathname'),
+    Input('lang-select', 'value'),
 )
-def update_sidebar(pathname):
-    return build_navbar(pathname or '/')
+def update_sidebar(pathname, lang):
+    return build_navbar(pathname or '/', lang or 'pt')
+
+
+# ── Aplica o tema no shell (CSS troca as variáveis via data-theme) ──
+app.clientside_callback(
+    """
+    function(tema) {
+        var shell = document.getElementById('app-shell');
+        if (shell) { shell.setAttribute('data-theme', tema || 'dark'); }
+        return '';
+    }
+    """,
+    Output('theme-dummy', 'children'),
+    Input('theme-select', 'value'),
+)
+
+
+# ── Traduz rótulos e placeholders da barra de filtros ──
+@callback(
+    Output('f-lbl-filtros', 'children'),
+    Output('f-lbl-periodo', 'children'),
+    Output('f-lbl-ano', 'children'),
+    Output('f-lbl-cliente', 'children'),
+    Output('f-lbl-servico', 'children'),
+    Output('f-lbl-fat', 'children'),
+    Output('filter-ano', 'placeholder'),
+    Output('filter-cliente', 'placeholder'),
+    Output('filter-produto', 'placeholder'),
+    Output('filter-valor-min', 'placeholder'),
+    Output('filter-valor-max', 'placeholder'),
+    Input('lang-select', 'value'),
+)
+def traduz_filtros(lang):
+    lang = lang or 'pt'
+    return (
+        t('f_filtros', lang), t('f_periodo', lang), t('f_ano', lang),
+        t('f_cliente', lang), t('f_servico', lang), t('f_fat', lang),
+        t('f_todos', lang), t('f_buscar', lang), t('f_todos_srv', lang),
+        t('f_min', lang), t('f_max', lang),
+    )
 
 
 # ── Formata campo Mín ao sair do campo (on blur) ──

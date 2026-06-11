@@ -1,15 +1,17 @@
 from dash import html, dcc
 
+from components.i18n import t
+
 
 PAGES = [
-    {'path': '/',            'label': 'Visão Executiva',  'icon': '📊'},
-    {'path': '/clientes',    'label': 'Clientes',          'icon': '🏢'},
-    {'path': '/produtos',    'label': 'Produtos & Serviços','icon': '📦'},
-    {'path': '/tendencias',  'label': 'Tendências',         'icon': '📈'},
+    {'path': '/',            'key': 'nav_overview', 'icon': '📊'},
+    {'path': '/clientes',    'key': 'nav_clientes', 'icon': '🏢'},
+    {'path': '/produtos',    'key': 'nav_produtos', 'icon': '📦'},
+    {'path': '/tendencias',  'key': 'nav_tend',     'icon': '📈'},
 ]
 
 
-def build_navbar(pathname='/'):
+def build_navbar(pathname='/', lang='pt'):
     links = []
     for page in PAGES:
         is_active = pathname == page['path']
@@ -17,7 +19,7 @@ def build_navbar(pathname='/'):
             dcc.Link(
                 [
                     html.Span(page['icon'], className='nav-icon'),
-                    html.Span(page['label']),
+                    html.Span(t(page['key'], lang)),
                 ],
                 href=page['path'],
                 className='nav-link active' if is_active else 'nav-link',
@@ -38,13 +40,13 @@ def build_navbar(pathname='/'):
                         ],
                         className='sidebar-brk-row',
                     ),
-                    html.Div('Faturamento Analytics', className='sidebar-logo-sub'),
+                    html.Div(t('nav_tagline', lang), className='sidebar-logo-sub'),
                 ],
                 className='sidebar-logo',
             ),
             html.Div(
                 [
-                    html.Div('Módulos', className='sidebar-section-label'),
+                    html.Div(t('nav_modulos', lang), className='sidebar-section-label'),
                     *links,
                 ],
                 className='sidebar-nav',

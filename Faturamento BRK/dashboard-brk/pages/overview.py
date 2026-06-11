@@ -8,15 +8,17 @@ import numpy as np
 from data.loader import get_liquid, apply_filters, last_month_is_partial
 from components.kpis import kpi_card, kpi_grid
 from components.insights import insight_panel
-from components.theme import COLORS, fmt_brl, CHART_COLORS
+from components.theme import (COLORS, fmt_brl, CHART_COLORS,
+                              get_palette, plotly_template)
+from components.i18n import t, meses_label
 
 dash.register_page(__name__, path='/', name='Visão Executiva', order=0)
 
 layout = html.Div([
     html.Div([
         html.Div([
-            html.Div('Visão Executiva', className='page-title'),
-            html.Div('Consolidado de faturamento · BRK Nstech', className='page-subtitle'),
+            html.Div('Visão Executiva', id='ov-title', className='page-title'),
+            html.Div('Consolidado de faturamento · BRK Nstech', id='ov-sub', className='page-subtitle'),
         ]),
         html.Span('', id='overview-partial-tag'),
     ], className='page-header', style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'flex-start'}),
@@ -28,8 +30,8 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div([
-                    html.Div('Receita Mensal', className='chart-title'),
-                    html.Div('Evolução com linha de tendência · barras por série', className='chart-subtitle'),
+                    html.Div('Receita Mensal', id='ov-c1t', className='chart-title'),
+                    html.Div('Evolução com linha de tendência · barras por série', id='ov-c1s', className='chart-subtitle'),
                 ]),
             ], className='chart-card-header'),
             dcc.Graph(id='overview-chart-monthly', config={'displayModeBar': False}),
@@ -38,8 +40,8 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div([
-                    html.Div('YoY · Comparativo Anual', className='chart-title'),
-                    html.Div('Receita mensal sobreposta por ano', className='chart-subtitle'),
+                    html.Div('YoY · Comparativo Anual', id='ov-c2t', className='chart-title'),
+                    html.Div('Receita mensal sobreposta por ano', id='ov-c2s', className='chart-subtitle'),
                 ]),
             ], className='chart-card-header'),
             dcc.Graph(id='overview-chart-yoy', config={'displayModeBar': False}),
@@ -50,8 +52,8 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div([
-                    html.Div('Composição por Serviço', className='chart-title'),
-                    html.Div('Treemap · portfólio completo de serviços', className='chart-subtitle'),
+                    html.Div('Composição por Serviço', id='ov-c3t', className='chart-title'),
+                    html.Div('Treemap · portfólio completo de serviços', id='ov-c3s', className='chart-subtitle'),
                 ]),
             ], className='chart-card-header'),
             dcc.Graph(id='overview-chart-treemap', config={'displayModeBar': False}, style={'height': '420px'}),
@@ -60,8 +62,8 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div([
-                    html.Div('Concentração de Clientes', className='chart-title'),
-                    html.Div('Distribuição da receita por faixa de cliente', className='chart-subtitle'),
+                    html.Div('Concentração de Clientes', id='ov-c4t', className='chart-title'),
+                    html.Div('Distribuição da receita por faixa de cliente', id='ov-c4s', className='chart-subtitle'),
                 ]),
             ], className='chart-card-header'),
             dcc.Graph(id='overview-chart-concentration', config={'displayModeBar': False}, style={'height': '420px'}),
@@ -72,8 +74,8 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div([
-                    html.Div('Sazonalidade · Receita Média por Mês', className='chart-title'),
-                    html.Div('Padrão histórico — identifica meses fortes e fracos', className='chart-subtitle'),
+                    html.Div('Sazonalidade · Receita Média por Mês', id='ov-c5t', className='chart-title'),
+                    html.Div('Padrão histórico — identifica meses fortes e fracos', id='ov-c5s', className='chart-subtitle'),
                 ]),
             ], className='chart-card-header'),
             dcc.Graph(id='overview-chart-heatmap', config={'displayModeBar': False}),
@@ -82,8 +84,8 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div([
-                    html.Div('Acumulado do Ano', className='chart-title'),
-                    html.Div('Running total · ano atual vs. anterior', className='chart-subtitle'),
+                    html.Div('Acumulado do Ano', id='ov-c6t', className='chart-title'),
+                    html.Div('Running total · ano atual vs. anterior', id='ov-c6s', className='chart-subtitle'),
                 ]),
             ], className='chart-card-header'),
             dcc.Graph(id='overview-chart-cumulative', config={'displayModeBar': False}),
@@ -103,6 +105,13 @@ layout = html.Div([
     Output('overview-chart-concentration', 'figure'),
     Output('overview-chart-heatmap', 'figure'),
     Output('overview-chart-cumulative', 'figure'),
+    Output('ov-title', 'children'), Output('ov-sub', 'children'),
+    Output('ov-c1t', 'children'), Output('ov-c1s', 'children'),
+    Output('ov-c2t', 'children'), Output('ov-c2s', 'children'),
+    Output('ov-c3t', 'children'), Output('ov-c3s', 'children'),
+    Output('ov-c4t', 'children'), Output('ov-c4s', 'children'),
+    Output('ov-c5t', 'children'), Output('ov-c5s', 'children'),
+    Output('ov-c6t', 'children'), Output('ov-c6s', 'children'),
     Input('filter-date', 'start_date'),
     Input('filter-date', 'end_date'),
     Input('filter-ano', 'value'),
@@ -110,10 +119,15 @@ layout = html.Div([
     Input('filter-produto', 'value'),
     Input('filter-valor-min', 'value'),
     Input('filter-valor-max', 'value'),
+    Input('theme-select', 'value'),
+    Input('lang-select', 'value'),
 )
-def update_overview(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
-    MESES_LABEL = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',
-                   7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'}
+def update_overview(start_date, end_date, anos, cliente, produto, valor_min, valor_max,
+                    tema, lang):
+    tema = tema or 'dark'
+    lang = lang or 'pt'
+    pal  = get_palette(tema)
+    MESES_LABEL = meses_label(lang)
     df_all = get_liquid()
     df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
 
@@ -193,19 +207,19 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     ) if len(top5_svc) > 0 and n > 0 else 0.0
 
     cards = kpi_grid([
-        kpi_card('Receita Líquida',          receita_liquida,    '✅', None,      'excluindo RET e DAV'),
-        kpi_card('MRR',                      mrr,                '📅', None,      'média últimos 3 meses completos'),
-        kpi_card('Faturado no Ano',          fat_ano,            '📆', delta_ano, f'vs. mesmo período de {ano_cur - 1}'),
-        kpi_card('Faturado 6 Meses',         fat_6m,             '📊', delta_6m,  'vs. 6 meses anteriores'),
-        kpi_card('Faturado Trimestre',       fat_3m,             '📈', delta_3m,  'vs. trimestre anterior'),
-        kpi_card('Faturado Mês',             fat_1m,             '🗓️', delta_1m,  f'{ultimo_mes or "—"} vs. mês anterior'),
-        kpi_card('Clientes no Período',      clientes_periodo,   '🏢', None,      'grupos econômicos ativos', value_fmt='int'),
-        kpi_card('Clientes Último Mês',      clientes_ult_mes,   '👥', None,      f'faturados em {ultimo_mes or "—"}', value_fmt='int'),
-        kpi_card('Ticket Médio Cliente/Mês', ticket_cliente_mes, '🎯', None,      'receita ÷ clientes ÷ meses'),
-        kpi_card('Ticket Top 5 Serviços/Mês',ticket_top5,       '🏆', None,      'média mensal dos 5 maiores serviços'),
+        kpi_card(t('k_rliq', lang),  receita_liquida,    '✅', None,      t('k_rliq_ctx', lang)),
+        kpi_card('MRR',              mrr,                '📅', None,      t('k_mrr_ctx', lang)),
+        kpi_card(t('k_fano', lang),  fat_ano,            '📆', delta_ano, t('k_fano_ctx', lang, ano=ano_cur - 1)),
+        kpi_card(t('k_f6m', lang),   fat_6m,             '📊', delta_6m,  t('k_f6m_ctx', lang)),
+        kpi_card(t('k_f3m', lang),   fat_3m,             '📈', delta_3m,  t('k_f3m_ctx', lang)),
+        kpi_card(t('k_f1m', lang),   fat_1m,             '🗓️', delta_1m,  t('k_f1m_ctx', lang, mes=ultimo_mes or '—')),
+        kpi_card(t('k_clip', lang),  clientes_periodo,   '🏢', None,      t('k_clip_ctx', lang), value_fmt='int'),
+        kpi_card(t('k_clim', lang),  clientes_ult_mes,   '👥', None,      t('k_clim_ctx', lang, mes=ultimo_mes or '—'), value_fmt='int'),
+        kpi_card(t('k_tcli', lang),  ticket_cliente_mes, '🎯', None,      t('k_tcli_ctx', lang)),
+        kpi_card(t('k_top5', lang),  ticket_top5,        '🏆', None,      t('k_top5_ctx', lang)),
     ])
 
-    insights = insight_panel(df)
+    insights = insight_panel(df, lang)
 
     # ── Gráfico Mensal com Tendência + IC + Anotação Anomalia ──
     monthly_full = df.groupby('AnoMesStr', observed=True)['Vlr.Total'].sum().reset_index()
@@ -218,14 +232,14 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     fig_monthly = go.Figure()
     fig_monthly.add_trace(go.Bar(
         x=monthly_full['Mês'], y=monthly_full['Receita'],
-        name='Receita', marker_color=COLORS['primary'],
+        name=t('g_receita', lang), marker_color=COLORS['primary'],
         marker_opacity=opacidades,
         hovertemplate='<b>%{x}</b><br>Receita: R$ %{y:,.0f}<extra></extra>',
     ))
     if parcial and len(monthly_full) >= 1:
         fig_monthly.add_annotation(
             x=monthly_full['Mês'].iloc[-1], y=float(monthly_full['Receita'].iloc[-1]),
-            text='parcial', showarrow=False, yshift=12,
+            text=t('g_parcial', lang), showarrow=False, yshift=12,
             font=dict(size=10, color=COLORS['text_muted']),
         )
     if n_fit >= 6:
@@ -246,12 +260,12 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
             y=list(ic_upper) + list(ic_lower)[::-1],
             fill='toself', fillcolor='rgba(30,144,255,0.08)',
             line=dict(color='rgba(0,0,0,0)'),
-            name='IC 80%', hoverinfo='skip',
+            name=t('g_ic', lang), hoverinfo='skip',
         ))
         fig_monthly.add_trace(go.Scatter(
             x=meses_fit, y=trend,
-            name='Tendência', line=dict(color=COLORS['info'], width=2, dash='dot'),
-            hovertemplate='Tendência: R$ %{y:,.0f}<extra></extra>',
+            name=t('g_tend', lang), line=dict(color=COLORS['info'], width=2, dash='dot'),
+            hovertemplate=t('g_tend', lang) + ': R$ %{y:,.0f}<extra></extra>',
         ))
         # Detecta meses anômalos (> 2,5σ acima da tendência) e anota
         for i, (mes, rec) in enumerate(zip(monthly_full['Mês'], ys)):
@@ -260,10 +274,10 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
                     x=mes, y=float(rec),
                     text='⚡', showarrow=False,
                     font=dict(size=14), yshift=10,
-                    hovertext=f'Pico atípico: R$ {rec/1e6:.1f}M<br>+{(rec-trend[i])/1e6:.1f}M acima da tendência',
+                    hovertext=f'{t("g_pico", lang)}: R$ {rec/1e6:.1f}M',
                 )
     fig_monthly.update_layout(
-        title='Receita Mensal · Tendência + IC 80% (⚡ = pico atípico)',
+        title=t('g_mensal', lang),
         xaxis_title='', yaxis_title='R$',
         yaxis_tickformat=',.0f',
         # mm/aaaa no eixo e no hover — o padrão do Plotly mostra meses em inglês
@@ -274,8 +288,6 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
 
     # ── YoY ──
     # Usa numero do mes no eixo X para garantir ordem cronologica correta
-    MESES_LABEL = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',
-                   7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'}
     df['AnoNum'] = df['Ano'].astype(int)
     yoy = df.groupby(['AnoNum', 'Mes'])['Vlr.Total'].sum().reset_index()
     fig_yoy = go.Figure()
@@ -293,7 +305,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
             hovertemplate=f'<b>{ano}</b> %{{customdata}}<br>R$ %{{y:,.0f}}<extra></extra>',
         ))
     fig_yoy.update_layout(
-        title='Comparativo Anual (YoY)',
+        title=t('g_yoy', lang),
         xaxis=dict(
             tickmode='array',
             tickvals=list(range(1, 13)),
@@ -320,11 +332,11 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         texttemplate='%{label}<br>R$ %{value:,.0f}',
         hovertemplate='<b>%{label}</b><br>Receita: R$ %{value:,.0f}<br>Participação: %{percentRoot:.1%}<extra></extra>',
         marker=dict(
-            colorscale=[[0, COLORS['surface2']], [0.3, COLORS['primary_dark']], [1, COLORS['primary']]],
+            colorscale=[[0, pal['surface2']], [0.3, COLORS['primary_dark']], [1, COLORS['primary']]],
             showscale=False,
         ),
     ))
-    fig_treemap.update_layout(title='Composição por Serviço · Todos os Serviços', height=400, margin=dict(t=40, l=0, r=0, b=0))
+    fig_treemap.update_layout(title=t('g_tree', lang), height=400, margin=dict(t=40, l=0, r=0, b=0))
 
     # ── Concentração com alerta de risco ──
     client_rev = df.groupby('GrupoEcon', observed=True)['Vlr.Total'].sum().sort_values(ascending=False).reset_index()
@@ -334,7 +346,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     top5_pct   = float(client_rev.iloc[:5]['Vlr.Total'].sum()) / total_rev * 100 if len(client_rev) >= 5 else 0
     top10_pct  = float(client_rev.iloc[:10]['Vlr.Total'].sum()) / total_rev * 100 if len(client_rev) >= 10 else 0
 
-    faixas = ['Top 1', 'Top 2-10', 'Top 11-50', 'Top 51-100', 'Demais']
+    faixas = ['Top 1', 'Top 2-10', 'Top 11-50', 'Top 51-100', t('faixa_demais', lang)]
     slices = [
         client_rev.iloc[:1]['Vlr.Total'].sum(),
         client_rev.iloc[1:10]['Vlr.Total'].sum(),
@@ -344,7 +356,8 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     ]
     # Cor do Top1 varia conforme nível de risco
     top1_color = COLORS['danger'] if top1_pct > 10 else COLORS['warning'] if top1_pct > 7 else COLORS['success']
-    risco_label = '🔴 Alto' if top1_pct > 10 else '🟡 Moderado' if top1_pct > 7 else '🟢 Saudável'
+    risco_label = (t('risco_alto', lang) if top1_pct > 10
+                   else t('risco_mod', lang) if top1_pct > 7 else t('risco_saud', lang))
 
     # sort=False mantém as fatias na ordem das faixas — senão o Plotly reordena
     # por valor e as cores deixam de corresponder às faixas
@@ -357,7 +370,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         hovertemplate='<b>%{label}</b><br>R$ %{value:,.0f}<br>%{percent}<extra></extra>',
     ))
     fig_conc.update_layout(
-        title=f'Concentração de Receita · Risco: {risco_label}',
+        title=t('g_conc', lang, risco=risco_label),
         showlegend=True,
         legend=dict(orientation='v'),
         height=400,
@@ -383,14 +396,14 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
 
     # Cor das barras: acima da média = verde/laranja, abaixo = azul apagado
     bar_colors = [
-        COLORS['primary'] if v >= media_geral else COLORS['text_muted']
+        COLORS['primary'] if v >= media_geral else pal['text_muted']
         for v in saz_media['Vlr.Total']
     ]
 
     fig_heat = go.Figure()
     fig_heat.add_trace(go.Bar(
         x=saz_media['mes_label'], y=saz_media['Vlr.Total'],
-        name='Média mensal',
+        name=t('g_med_mensal', lang),
         marker_color=bar_colors,
         marker_opacity=0.9,
         hovertemplate='<b>%{x}</b><br>Média histórica: R$ %{y:,.0f}<extra></extra>',
@@ -399,7 +412,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     fig_heat.add_hline(
         y=media_geral,
         line_dash='dot', line_color=COLORS['warning'], line_width=1.5,
-        annotation_text=f'Média geral: {fmt_brl(media_geral)}',
+        annotation_text=t('g_media', lang, v=fmt_brl(media_geral)),
         annotation_font_color=COLORS['warning'],
         annotation_position='bottom right',
     )
@@ -407,7 +420,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     mes_forte = saz_media.loc[saz_media['Vlr.Total'].idxmax(), 'mes_label']
     mes_fraco = saz_media.loc[saz_media['Vlr.Total'].idxmin(), 'mes_label']
     fig_heat.update_layout(
-        title=f'Sazonalidade · Receita Média por Mês (🟠 acima da média) · Pico: {mes_forte} · Vale: {mes_fraco}',
+        title=t('g_saz', lang, pico=mes_forte, vale=mes_fraco),
         xaxis_title='', yaxis_title='R$',
         yaxis_tickformat=',.0f',
         showlegend=False,
@@ -430,10 +443,10 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
                 fill=fill,
                 fillcolor=f'rgba(255,101,0,0.08)' if fill != 'none' else None,
                 customdata=d['Mes'].map(MESES_LABEL),
-                hovertemplate=f'<b>{ano}</b> %{{customdata}}<br>Acumulado: R$ %{{y:,.0f}}<extra></extra>',
+                hovertemplate=f'<b>{ano}</b> %{{customdata}}<br>{t("h_acum", lang)}: R$ %{{y:,.0f}}<extra></extra>',
             ))
     fig_cum.update_layout(
-        title='Receita Acumulada no Ano (Running Total)',
+        title=t('g_acum', lang),
         xaxis=dict(
             tickmode='array',
             tickvals=list(range(1, 13)),
@@ -450,8 +463,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     if parcial and mes_parcial:
         ultimo_dia = df['Emissao'].max().strftime('%d/%m/%Y')
         tag = html.Span(
-            f'⚠️ dados até {ultimo_dia} · {mes_parcial} é mês parcial '
-            f'(fora das variações e médias)',
+            t('ov_parcial', lang, data=ultimo_dia, mes=mes_parcial),
             style={
                 'fontSize': '11px', 'color': COLORS['warning'],
                 'border': f'1px solid {COLORS["warning"]}', 'borderRadius': '6px',
@@ -461,4 +473,18 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     else:
         tag = ''
 
-    return tag, cards, insights, fig_monthly, fig_yoy, fig_treemap, fig_conc, fig_heat, fig_cum
+    tpl = plotly_template(tema)
+    for f in (fig_monthly, fig_yoy, fig_treemap, fig_conc, fig_heat, fig_cum):
+        f.update_layout(template=tpl)
+
+    headers = (
+        t('ov_title', lang), t('ov_sub', lang),
+        t('c_mensal', lang), t('c_mensal_sub', lang),
+        t('c_yoy', lang), t('c_yoy_sub', lang),
+        t('c_tree', lang), t('c_tree_sub', lang),
+        t('c_conc', lang), t('c_conc_sub', lang),
+        t('c_saz', lang), t('c_saz_sub', lang),
+        t('c_acum', lang), t('c_acum_sub', lang),
+    )
+    return (tag, cards, insights, fig_monthly, fig_yoy, fig_treemap, fig_conc,
+            fig_heat, fig_cum, *headers)

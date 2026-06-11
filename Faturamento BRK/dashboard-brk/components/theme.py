@@ -70,6 +70,95 @@ _template.layout = go.Layout(
 pio.templates['nstech'] = _template
 pio.templates.default = 'nstech'
 
+# ── Tema claro ──
+COLORS_LIGHT = {
+    **COLORS,
+    'bg': '#F2F4F8',
+    'surface': '#FFFFFF',
+    'surface2': '#F1F5F9',
+    'border': '#E2E8F0',
+    'text': '#0F172A',
+    'text_secondary': '#475569',
+    'text_muted': '#94A3B8',
+}
+
+_template_light = go.layout.Template()
+_template_light.layout = go.Layout(
+    paper_bgcolor=COLORS_LIGHT['surface'],
+    plot_bgcolor=COLORS_LIGHT['surface'],
+    separators=',.',
+    font=dict(family='Inter, sans-serif', color=COLORS_LIGHT['text'], size=12),
+    colorway=CHART_COLORS,
+    title=dict(font=dict(size=14, color=COLORS_LIGHT['text']), x=0.01, xanchor='left'),
+    legend=dict(
+        bgcolor='rgba(0,0,0,0)',
+        bordercolor=COLORS_LIGHT['border'],
+        font=dict(color=COLORS_LIGHT['text_secondary'], size=11),
+    ),
+    xaxis=dict(
+        gridcolor=COLORS_LIGHT['border'], linecolor=COLORS_LIGHT['border'],
+        tickcolor=COLORS_LIGHT['border'],
+        tickfont=dict(color=COLORS_LIGHT['text_secondary'], size=11),
+        title_font=dict(color=COLORS_LIGHT['text_secondary']),
+        zerolinecolor=COLORS_LIGHT['border'],
+    ),
+    yaxis=dict(
+        gridcolor=COLORS_LIGHT['border'], linecolor=COLORS_LIGHT['border'],
+        tickcolor=COLORS_LIGHT['border'],
+        tickfont=dict(color=COLORS_LIGHT['text_secondary'], size=11),
+        title_font=dict(color=COLORS_LIGHT['text_secondary']),
+        zerolinecolor=COLORS_LIGHT['border'],
+        automargin=True,
+    ),
+    margin=dict(l=75, r=20, t=50, b=40),
+    hovermode='x unified',
+    hoverlabel=dict(
+        bgcolor=COLORS_LIGHT['surface2'],
+        bordercolor=COLORS_LIGHT['border'],
+        font=dict(color=COLORS_LIGHT['text'], size=12),
+        namelength=-1,
+        align='left',
+    ),
+)
+pio.templates['nstech_light'] = _template_light
+
+
+def get_palette(modo='dark'):
+    return COLORS_LIGHT if modo == 'light' else COLORS
+
+
+def plotly_template(modo='dark'):
+    return 'nstech_light' if modo == 'light' else 'nstech'
+
+
+def aplica_tema(figs, modo='dark'):
+    """Aplica o template do tema em uma lista de figuras."""
+    tpl = plotly_template(modo)
+    for f in figs:
+        f.update_layout(template=tpl)
+    return figs
+
+
+def table_styles(modo='dark'):
+    """Estilos de dash_table conforme o tema (cores são inline, não CSS)."""
+    pal = get_palette(modo)
+    return {
+        'style_table': {'overflowX': 'auto', 'borderRadius': '8px'},
+        'style_header': {
+            'backgroundColor': pal['surface2'], 'color': pal['text_secondary'],
+            'fontWeight': '600', 'fontSize': '11px', 'textTransform': 'uppercase',
+            'letterSpacing': '0.5px', 'border': f'1px solid {pal["border"]}',
+            'padding': '10px 12px',
+        },
+        'style_cell': {
+            'backgroundColor': pal['surface'], 'color': pal['text'],
+            'border': f'1px solid {pal["border"]}', 'fontSize': '12px',
+            'padding': '8px 12px', 'fontFamily': 'Inter, sans-serif',
+            'overflow': 'hidden', 'textOverflow': 'ellipsis', 'maxWidth': '220px',
+        },
+        'zebra': {'if': {'row_index': 'odd'}, 'backgroundColor': pal['surface2']},
+    }
+
 
 def fmt_brl(value):
     v = float(value)  # garante compatibilidade com numpy float32/float64

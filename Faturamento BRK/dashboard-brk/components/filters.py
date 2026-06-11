@@ -13,11 +13,11 @@ def build_filter_bar():
     return html.Div(
         id='filter-bar',
         children=[
-            html.Span('Filtros:', className='filter-label'),
+            html.Span('Filtros:', id='f-lbl-filtros', className='filter-label'),
 
             # ── Período ──
             html.Div([
-                html.Span('Período', className='filter-label'),
+                html.Span('Período', id='f-lbl-periodo', className='filter-label'),
                 dcc.DatePickerRange(
                     id='filter-date',
                     start_date=min_date.date(),
@@ -33,7 +33,7 @@ def build_filter_bar():
 
             # ── Ano ──
             html.Div([
-                html.Span('Ano', className='filter-label'),
+                html.Span('Ano', id='f-lbl-ano', className='filter-label'),
                 dcc.Dropdown(
                     id='filter-ano',
                     options=[{'label': str(a), 'value': a} for a in anos],
@@ -45,7 +45,7 @@ def build_filter_bar():
 
             # ── Cliente — autocomplete com sugestões conforme digitação ──
             html.Div([
-                html.Span('Cliente', className='filter-label'),
+                html.Span('Cliente', id='f-lbl-cliente', className='filter-label'),
                 dcc.Dropdown(
                     id='filter-cliente',
                     options=[{'label': c.title(), 'value': c} for c in clientes],
@@ -61,7 +61,7 @@ def build_filter_bar():
 
             # ── Serviço — dropdown multi-select pesquisável ──
             html.Div([
-                html.Span('Serviço', className='filter-label'),
+                html.Span('Serviço', id='f-lbl-servico', className='filter-label'),
                 dcc.Dropdown(
                     id='filter-produto',
                     options=[{'label': p.title(), 'value': p} for p in produtos],
@@ -77,7 +77,7 @@ def build_filter_bar():
 
             # ── Range de Faturamento ──
             html.Div([
-                html.Span('Faturamento (R$)', className='filter-label'),
+                html.Span('Faturamento (R$)', id='f-lbl-fat', className='filter-label'),
                 html.Div([
                     dcc.Input(
                         id='filter-valor-min',
@@ -100,5 +100,31 @@ def build_filter_bar():
                     ),
                 ], style={'display': 'flex', 'alignItems': 'center', 'gap': '2px'}),
             ], className='filter-group'),
+
+            # ── Preferências: tema e idioma (memorizados pelo navegador) ──
+            html.Div([
+                dcc.Dropdown(
+                    id='theme-select',
+                    options=[
+                        {'label': '🌙 Dark', 'value': 'dark'},
+                        {'label': '☀️ Light', 'value': 'light'},
+                    ],
+                    value='dark', clearable=False, searchable=False,
+                    persistence=True, persistence_type='local',
+                    style={'minWidth': '110px', **_DROP},
+                ),
+                dcc.Dropdown(
+                    id='lang-select',
+                    options=[
+                        {'label': '🇧🇷 PT', 'value': 'pt'},
+                        {'label': '🇺🇸 EN', 'value': 'en'},
+                        {'label': '🇪🇸 ES', 'value': 'es'},
+                    ],
+                    value='pt', clearable=False, searchable=False,
+                    persistence=True, persistence_type='local',
+                    style={'minWidth': '92px', **_DROP},
+                ),
+            ], className='filter-group pref-group',
+               style={'marginLeft': 'auto'}),
         ],
     )

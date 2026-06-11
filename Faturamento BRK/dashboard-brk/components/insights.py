@@ -3,6 +3,7 @@ import numpy as np
 from dash import html
 
 from data.loader import last_month_is_partial
+from components.i18n import t as _t
 
 
 def _pt(v, dec=1):
@@ -20,10 +21,10 @@ def _item(icon, text_html, kind='info'):
     )
 
 
-def compute_insights(df: pd.DataFrame) -> list:
+def compute_insights(df: pd.DataFrame, lang: str = 'pt') -> list:
     insights = []
     if df.empty:
-        return [_item('ℹ️', html.Span('Sem dados para o período selecionado.'), 'info')]
+        return [_item('ℹ️', html.Span(_t('i_sem_dados', lang)), 'info')]
 
     now = df['Emissao'].max()
 
@@ -45,9 +46,9 @@ def compute_insights(df: pd.DataFrame) -> list:
                 insights.append(_item(
                     '🔴',
                     html.Span([
-                        'Queda de ',
+                        _t('i_queda_pre', lang),
                         html.Strong(f'{_pt(abs(delta))}%'),
-                        f' na receita do último mês completo ({monthly.index[-1]}) vs. mês anterior.',
+                        _t('i_queda_pos', lang, mes=monthly.index[-1]),
                     ]),
                     'critical',
                 ))
@@ -55,9 +56,9 @@ def compute_insights(df: pd.DataFrame) -> list:
                 insights.append(_item(
                     '🚀',
                     html.Span([
-                        'Crescimento de ',
+                        _t('i_cresc_pre', lang),
                         html.Strong(f'{_pt(delta)}%'),
-                        f' na receita do último mês completo ({monthly.index[-1]}) vs. mês anterior.',
+                        _t('i_cresc_pos', lang, mes=monthly.index[-1]),
                     ]),
                     'positive',
                 ))
@@ -74,9 +75,9 @@ def compute_insights(df: pd.DataFrame) -> list:
         insights.append(_item(
             '🔴',
             html.Span([
-                'Risco ALTO: ',
+                _t('i_conc_alto_pre', lang),
                 html.Strong(top1_nome),
-                f' representa {_pt(top1_pct)}% da receita — concentração crítica em cliente único.',
+                _t('i_conc_alto_pos', lang, pct=_pt(top1_pct)),
             ]),
             'critical',
         ))
@@ -84,9 +85,9 @@ def compute_insights(df: pd.DataFrame) -> list:
         insights.append(_item(
             '⚠️',
             html.Span([
-                'Alerta de concentração: ',
+                _t('i_conc_pre', lang),
                 html.Strong(top1_nome),
-                f' representa {_pt(top1_pct)}% da receita — monitorar dependência.',
+                _t('i_conc_pos', lang, pct=_pt(top1_pct)),
             ]),
             'warning',
         ))
@@ -95,8 +96,8 @@ def compute_insights(df: pd.DataFrame) -> list:
         insights.append(_item(
             '⚠️',
             html.Span([
-                html.Strong(f'Top 10 clientes = {_pt(top10_pct)}%'),
-                f' da receita (Top 5 = {_pt(top5_pct)}%) — carteira com concentração relevante.',
+                html.Strong(_t('i_top10_pre', lang, pct=_pt(top10_pct))),
+                _t('i_top10_pos', lang, pct5=_pt(top5_pct)),
             ]),
             'warning',
         ))
@@ -108,8 +109,8 @@ def compute_insights(df: pd.DataFrame) -> list:
         insights.append(_item(
             '🔶',
             html.Span([
-                html.Strong(f'{len(churn_risk)} clientes'),
-                ' sem faturamento nos últimos 60–179 dias — risco de churn.',
+                html.Strong(_t('i_churn_pre', lang, n=len(churn_risk))),
+                _t('i_churn_pos', lang),
             ]),
             'warning',
         ))
@@ -119,8 +120,8 @@ def compute_insights(df: pd.DataFrame) -> list:
         insights.append(_item(
             '🔴',
             html.Span([
-                html.Strong(f'{len(inativos)} clientes'),
-                ' inativos (sem NF há 180+ dias).',
+                html.Strong(_t('i_churn_pre', lang, n=len(inativos))),
+                _t('i_inat_pos', lang),
             ]),
             'critical',
         ))
@@ -133,9 +134,9 @@ def compute_insights(df: pd.DataFrame) -> list:
         insights.append(_item(
             '🏆',
             html.Span([
-                'Maior cliente: ',
+                _t('i_maior_pre', lang),
                 html.Strong(top_cli),
-                f' com {fmt_brl(top_val)} no período.',
+                _t('i_maior_pos', lang, v=fmt_brl(top_val)),
             ]),
             'positive',
         ))
@@ -160,10 +161,11 @@ def compute_insights(df: pd.DataFrame) -> list:
                 insights.append(_item(
                     '📈',
                     html.Span([
-                        'Serviço em forte expansão: ',
+                        _t('i_exp_pre', lang),
                         html.Strong(top_growth_svc.title()),
-                        f' saltou de {_brl(float(base_ok[top_growth_svc]))} para '
-                        f'{_brl(float(recent_3[top_growth_svc]))} nos últimos 3 meses.',
+                        _t('i_exp_pos', lang,
+                           de=_brl(float(base_ok[top_growth_svc])),
+                           para=_brl(float(recent_3[top_growth_svc]))),
                     ]),
                     'positive',
                 ))
@@ -171,9 +173,9 @@ def compute_insights(df: pd.DataFrame) -> list:
                 insights.append(_item(
                     '📈',
                     html.Span([
-                        'Serviço em aceleração: ',
+                        _t('i_acel_pre', lang),
                         html.Strong(top_growth_svc.title()),
-                        f' (+{_pt(top_growth_val)}% últimos 3 meses vs. anteriores).',
+                        _t('i_acel_pos', lang, pct=_pt(top_growth_val)),
                     ]),
                     'positive',
                 ))
@@ -186,8 +188,8 @@ def compute_insights(df: pd.DataFrame) -> list:
         insights.append(_item(
             '✨',
             html.Span([
-                html.Strong(f'{len(novos)} novos clientes'),
-                ' incorporados nos últimos 90 dias.',
+                html.Strong(_t('i_novos_pre', lang, n=len(novos))),
+                _t('i_novos_pos', lang),
             ]),
             'positive',
         ))
@@ -199,21 +201,21 @@ def compute_insights(df: pd.DataFrame) -> list:
         insights.append(_item(
             '🔍',
             html.Span([
-                html.Strong(f'{len(mono)} serviços'),
-                ' são consumidos por apenas 1 cliente — risco de concentração de produto.',
+                html.Strong(_t('i_mono_pre', lang, n=len(mono))),
+                _t('i_mono_pos', lang),
             ]),
             'warning',
         ))
 
-    return insights if insights else [_item('✅', html.Span('Nenhum alerta identificado para o período.'), 'positive')]
+    return insights if insights else [_item('✅', html.Span(_t('i_nada', lang)), 'positive')]
 
 
-def insight_panel(df: pd.DataFrame):
-    items = compute_insights(df)
+def insight_panel(df: pd.DataFrame, lang: str = 'pt'):
+    items = compute_insights(df, lang)
     return html.Div(
         [
             html.Div(
-                ['⚡ ', html.Span('Inteligência Automática de Negócio')],
+                ['⚡ ', html.Span(_t('i_panel', lang))],
                 className='insight-panel-title',
             ),
             html.Div(items, className='insight-grid'),

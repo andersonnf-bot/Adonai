@@ -6,7 +6,9 @@ import numpy as np
 
 from data.loader import get_liquid, apply_filters, last_month_is_partial
 from components.theme import (COLORS, fmt_brl, CHART_COLORS,
-                              TBL_BRL, TBL_BRL_SIGNED, TBL_PCT, TBL_PCT_SIGNED, col_num)
+                              TBL_BRL, TBL_BRL_SIGNED, TBL_PCT, TBL_PCT_SIGNED, col_num,
+                              get_palette, plotly_template, table_styles)
+from components.i18n import t
 from components.kpis import kpi_card, kpi_grid
 
 dash.register_page(__name__, path='/tendencias', name='Tendências', order=3)
@@ -34,32 +36,47 @@ _CELL = {
     },
     'style_data_conditional': [
         {'if': {'row_index': 'odd'}, 'backgroundColor': COLORS['surface2']},
-        {'if': {'filter_query': '{Status} contains "Crescendo"'},  'color': COLORS['success']},
-        {'if': {'filter_query': '{Status} contains "Queda"'},      'color': COLORS['danger']},
-        {'if': {'filter_query': '{Status} contains "Risco"'},      'color': '#FF6060'},
-        {'if': {'filter_query': '{Status} contains "Inativo"'},    'color': COLORS['text_muted']},
-        {'if': {'filter_query': '{Status} contains "Novo"'},       'color': COLORS['primary']},
-        {'if': {'filter_query': '{Status} contains "Recuperado"'}, 'color': COLORS['info']},
-        {'if': {'filter_query': '{HS} >= 70'},                     'color': COLORS['success']},
-        {'if': {'filter_query': '{HS} < 30'},                      'color': COLORS['danger']},
+        {'if': {'filter_query': '{Status} contains "🟢"'}, 'color': COLORS['success']},
+        {'if': {'filter_query': '{Status} contains "🟠"'}, 'color': COLORS['danger']},
+        {'if': {'filter_query': '{Status} contains "🔴"'}, 'color': '#FF6060'},
+        {'if': {'filter_query': '{Status} contains "⚫"'}, 'color': COLORS['text_muted']},
+        {'if': {'filter_query': '{Status} contains "🆕"'}, 'color': COLORS['primary']},
+        {'if': {'filter_query': '{Status} contains "🔄"'}, 'color': COLORS['info']},
+        {'if': {'filter_query': '{HS} >= 70'},             'color': COLORS['success']},
+        {'if': {'filter_query': '{HS} < 30'},              'color': COLORS['danger']},
     ],
 }
+
+
+def _tend_conditionals(pal):
+    return [
+        {'if': {'row_index': 'odd'}, 'backgroundColor': pal['surface2']},
+        {'if': {'filter_query': '{Status} contains "🟢"'}, 'color': pal['success']},
+        {'if': {'filter_query': '{Status} contains "🟠"'}, 'color': pal['danger']},
+        {'if': {'filter_query': '{Status} contains "🔴"'}, 'color': '#FF6060'},
+        {'if': {'filter_query': '{Status} contains "⚫"'}, 'color': pal['text_muted']},
+        {'if': {'filter_query': '{Status} contains "🆕"'}, 'color': pal['primary']},
+        {'if': {'filter_query': '{Status} contains "🔄"'}, 'color': pal['info']},
+        {'if': {'filter_query': '{HS} >= 70'},             'color': pal['success']},
+        {'if': {'filter_query': '{HS} < 30'},              'color': pal['danger']},
+    ]
 
 layout = html.Div([
     # ── Cabeçalho ──
     html.Div([
         html.Div([
-            html.Div('Radar Gerencial de Clientes', className='page-title'),
+            html.Div('Radar Gerencial de Clientes', id='t-title', className='page-title'),
             html.Div(
                 'Crescimento · Retenção · Risco · Oportunidade · Health Score',
-                className='page-subtitle'
+                id='t-sub', className='page-subtitle'
             ),
         ]),
         html.Div([
-            html.Span('Thresholds: ', className='filter-label'),
+            html.Span('Thresholds: ', id='t-thr-lbl', className='filter-label'),
             html.Span(
                 f'Crescimento >{TH_CRESCIMENTO}% · Queda <{abs(TH_QUEDA)}% · '
                 f'Inativo >{TH_INATIVO_DIAS}d',
+                id='t-thr-val',
                 style={'fontSize': '11px', 'color': COLORS['text_muted']}
             ),
         ], style={'display': 'flex', 'alignItems': 'center', 'gap': '6px'}),
@@ -75,16 +92,16 @@ layout = html.Div([
     html.Div([
         html.Div([
             html.Div([
-                html.Div('Matriz de Ação Gerencial', className='chart-title'),
-                html.Div('Participação na receita × crescimento · priorização comercial', className='chart-subtitle'),
+                html.Div('Matriz de Ação Gerencial', id='t-c1t', className='chart-title'),
+                html.Div('Participação na receita × crescimento · priorização comercial', id='t-c1s', className='chart-subtitle'),
             ], className='chart-card-header'),
             dcc.Graph(id='tend-matrix', config={'displayModeBar': False}, style={'height': '460px'}),
         ], className='chart-card'),
 
         html.Div([
             html.Div([
-                html.Div('Heatmap de Clientes · Top 50', className='chart-title'),
-                html.Div('Volume mensal faturado · identifica crescimento, queda e abandono', className='chart-subtitle'),
+                html.Div('Heatmap de Clientes · Top 50', id='t-c2t', className='chart-title'),
+                html.Div('Volume mensal faturado · identifica crescimento, queda e abandono', id='t-c2s', className='chart-subtitle'),
             ], className='chart-card-header'),
             dcc.Graph(id='tend-heatmap', config={'displayModeBar': False}, style={'height': '460px'}),
         ], className='chart-card'),
@@ -94,16 +111,16 @@ layout = html.Div([
     html.Div([
         html.Div([
             html.Div([
-                html.Div('🚀 Top 20 — Maior Crescimento', className='chart-title'),
-                html.Div('Receita adicional gerada · oportunidade de expansão', className='chart-subtitle'),
+                html.Div('🚀 Top 20 — Maior Crescimento', id='t-c3t', className='chart-title'),
+                html.Div('Receita adicional gerada · oportunidade de expansão', id='t-c3s', className='chart-subtitle'),
             ], className='chart-card-header'),
             dcc.Graph(id='tend-rank-top', config={'displayModeBar': False}, style={'height': '520px'}),
         ], className='chart-card'),
 
         html.Div([
             html.Div([
-                html.Div('⚠️ Top 20 — Maior Queda', className='chart-title'),
-                html.Div('Receita perdida · ação imediata de retenção', className='chart-subtitle'),
+                html.Div('⚠️ Top 20 — Maior Queda', id='t-c4t', className='chart-title'),
+                html.Div('Receita perdida · ação imediata de retenção', id='t-c4s', className='chart-subtitle'),
             ], className='chart-card-header'),
             dcc.Graph(id='tend-rank-bot', config={'displayModeBar': False}, style={'height': '520px'}),
         ], className='chart-card'),
@@ -113,8 +130,8 @@ layout = html.Div([
     html.Div([
         html.Div([
             html.Div([
-                html.Div('Central de Gestão de Clientes', className='chart-title'),
-                html.Div('Todos os clientes · Health Score · Status · Ordenável · Exportável', className='chart-subtitle'),
+                html.Div('Central de Gestão de Clientes', id='t-c5t', className='chart-title'),
+                html.Div('Todos os clientes · Health Score · Status · Ordenável · Exportável', id='t-c5s', className='chart-subtitle'),
             ], className='chart-card-header'),
             dash_table.DataTable(
                 id='tend-table',
@@ -147,6 +164,16 @@ layout = html.Div([
     Output('tend-rank-bot', 'figure'),
     Output('tend-table',    'data'),
     Output('tend-table',    'columns'),
+    Output('tend-table',    'style_header'),
+    Output('tend-table',    'style_cell'),
+    Output('tend-table',    'style_data_conditional'),
+    Output('t-title', 'children'), Output('t-sub', 'children'),
+    Output('t-thr-lbl', 'children'), Output('t-thr-val', 'children'),
+    Output('t-c1t', 'children'), Output('t-c1s', 'children'),
+    Output('t-c2t', 'children'), Output('t-c2s', 'children'),
+    Output('t-c3t', 'children'), Output('t-c3s', 'children'),
+    Output('t-c4t', 'children'), Output('t-c4s', 'children'),
+    Output('t-c5t', 'children'), Output('t-c5s', 'children'),
     Input('filter-date',      'start_date'),
     Input('filter-date',      'end_date'),
     Input('filter-ano',       'value'),
@@ -154,19 +181,38 @@ layout = html.Div([
     Input('filter-produto',   'value'),
     Input('filter-valor-min', 'value'),
     Input('filter-valor-max', 'value'),
+    Input('theme-select', 'value'),
+    Input('lang-select', 'value'),
 )
-def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_max):
+def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_max,
+                 tema, lang):
+    tema = tema or 'dark'
+    lang = lang or 'pt'
+    pal  = get_palette(tema)
+    ts   = table_styles(tema)
+    tpl  = plotly_template(tema)
+    extras = (ts['style_header'], ts['style_cell'], _tend_conditionals(pal),
+              t('t_title', lang), t('t_sub', lang),
+              t('thresholds_lbl', lang),
+              t('t_thresholds', lang, c=TH_CRESCIMENTO, q=abs(TH_QUEDA), i=TH_INATIVO_DIAS),
+              t('t_matriz', lang), t('t_matriz_sub', lang),
+              t('t_heat', lang), t('t_heat_sub', lang),
+              t('t_rtop', lang), t('t_rtop_sub', lang),
+              t('t_rbot', lang), t('t_rbot_sub', lang),
+              t('t_central', lang), t('t_central_sub', lang))
     df_all = get_liquid()
     df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
 
     empty_fig = go.Figure()
     empty_fig.update_layout(
-        title='Sem dados para o período/filtro selecionado',
+        title=t('t_vazio', lang),
         height=400,
+        template=tpl,
     )
 
     if df.empty:
-        return html.Div('Sem dados.'), html.Div(), empty_fig, empty_fig, empty_fig, empty_fig, [], []
+        return (html.Div(t('t_semdados', lang)), html.Div(), empty_fig, empty_fig,
+                empty_fig, empty_fig, [], [], *extras)
 
     now = pd.Timestamp(df['Emissao'].max())
 
@@ -246,13 +292,13 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         g    = row['GrupoEcon']
         nova = pd.notna(row['primeira_nf']) and (now - row['primeira_nf']).days <= TH_NOVO_DIAS
 
-        if nova:              return '🆕 Novo'
-        if g in recuperados:  return '🔄 Recuperado'
-        if dias >= TH_INATIVO_DIAS: return '⚫ Inativo'
-        if v >= TH_CRESCIMENTO:     return '🟢 Crescendo'
-        if v <= TH_RISCO:           return '🔴 Em Risco'
-        if v <= TH_QUEDA:           return '🟠 Em Queda'
-        return '🟡 Estável'
+        if nova:              return t('ts_novo', lang)
+        if g in recuperados:  return t('ts_recup', lang)
+        if dias >= TH_INATIVO_DIAS: return t('ts_inativo', lang)
+        if v >= TH_CRESCIMENTO:     return t('ts_cresc', lang)
+        if v <= TH_RISCO:           return t('ts_risco', lang)
+        if v <= TH_QUEDA:           return t('ts_queda', lang)
+        return t('ts_estavel', lang)
 
     agg['Status'] = agg.apply(classify, axis=1)
 
@@ -271,14 +317,16 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
 
     agg['HS'] = agg.apply(health, axis=1)
     agg['Health'] = agg['HS'].apply(
-        lambda s: '🟢 Saudável' if s >= 70 else '🟡 Atenção' if s >= 45 else '🔴 Risco' if s >= 20 else '⚫ Perdido'
+        lambda s: t('hs_saudavel', lang) if s >= 70 else t('hs_atencao', lang)
+        if s >= 45 else t('hs_risco', lang) if s >= 20 else t('hs_perdido', lang)
     )
 
     # ── Upsell / Cross-sell ──
     med_svc = float(agg['servicos'].median()) if len(agg) > 0 else 1
     med_rec = float(agg['receita'].median())   if len(agg) > 0 else 0
-    agg['Upsell']    = np.where((agg['var_3m'].fillna(0) > 10) & (agg['servicos'] <= med_svc), '📈 Sim', '—')
-    agg['CrossSell'] = np.where((agg['servicos'] == 1) & (agg['receita'] > med_rec),            '🔀 Sim', '—')
+    sim_up = t('sim_upsell', lang)
+    agg['Upsell']    = np.where((agg['var_3m'].fillna(0) > 10) & (agg['servicos'] <= med_svc), sim_up, '—')
+    agg['CrossSell'] = np.where((agg['servicos'] == 1) & (agg['receita'] > med_rec),            t('sim_xsell', lang), '—')
 
     # ── Participação ──
     total = float(agg['receita'].sum())
@@ -286,12 +334,12 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
 
     # ────────────── KPIs ──────────────
     st = agg['Status']
-    crescendo  = (st.str.contains('Crescendo')).sum()
-    estavel    = (st.str.contains('Estável')).sum()
-    queda      = (st.str.contains('Queda') | st.str.contains('Risco')).sum()
-    inativo    = (st.str.contains('Inativo')).sum()
-    novo       = (st.str.contains('Novo')).sum()
-    recuperado = (st.str.contains('Recuperado')).sum()
+    crescendo  = (st.str.contains('🟢')).sum()
+    estavel    = (st.str.contains('🟡')).sum()
+    queda      = (st.str.contains('🟠') | st.str.contains('🔴')).sum()
+    inativo    = (st.str.contains('⚫')).sum()
+    novo       = (st.str.contains('🆕')).sum()
+    recuperado = (st.str.contains('🔄')).sum()
 
     rec_expansao = float(agg.loc[agg['delta_abs'] > 0, 'delta_abs'].sum())
     # receita em risco = últimos 12 meses dos clientes em queda/inativos
@@ -301,20 +349,20 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
     agg['rec_12m'] = agg['GrupoEcon'].map(rec12).fillna(0.0)
     total_12m = float(rec12.sum())
     rec_risco = float(agg.loc[
-        agg['Status'].str.contains('Queda|Risco|Inativo'), 'rec_12m'
+        agg['Status'].str.contains('🟠|🔴|⚫'), 'rec_12m'
     ].sum())
-    upsell_n = (agg['Upsell'] == '📈 Sim').sum()
+    upsell_n = (agg['Upsell'] == sim_up).sum()
 
     kpis = kpi_grid([
-        kpi_card('Crescendo',       crescendo,     '🟢', None, 'clientes em expansão',     value_fmt='int'),
-        kpi_card('Estáveis',        estavel,       '🟡', None, 'oscilação normal',          value_fmt='int'),
-        kpi_card('Em Queda/Risco',  queda,         '🔴', None, 'requerem atenção imediata', value_fmt='int'),
-        kpi_card('Inativos',        inativo,       '⚫', None, f'sem NF > {TH_INATIVO_DIAS}d', value_fmt='int'),
-        kpi_card('Novos',           novo,          '🆕', None, 'últimos 90 dias',           value_fmt='int'),
-        kpi_card('Recuperados',     recuperado,    '🔄', None, 'retornaram após pausa',     value_fmt='int'),
-        kpi_card('Receita em Expansão', rec_expansao, '💰', None, 'gerada por clientes em crescimento'),
-        kpi_card('Receita em Risco',    rec_risco,    '⚠️', None, 'últimos 12M de clientes em queda/inativos'),
-        kpi_card('Potencial Upsell',    upsell_n,     '📈', None, 'clientes com oportunidade', value_fmt='int'),
+        kpi_card(t('tk_cresc', lang),   crescendo,  '🟢', None, t('tk_cresc_ctx', lang),   value_fmt='int'),
+        kpi_card(t('tk_estavel', lang), estavel,    '🟡', None, t('tk_estavel_ctx', lang), value_fmt='int'),
+        kpi_card(t('tk_queda', lang),   queda,      '🔴', None, t('tk_queda_ctx', lang),   value_fmt='int'),
+        kpi_card(t('tk_inativos', lang), inativo,   '⚫', None, t('tk_inativos_ctx', lang, d=TH_INATIVO_DIAS), value_fmt='int'),
+        kpi_card(t('tk_novos', lang),   novo,       '🆕', None, t('tk_novos_ctx', lang),   value_fmt='int'),
+        kpi_card(t('tk_recup', lang),   recuperado, '🔄', None, t('tk_recup_ctx', lang),   value_fmt='int'),
+        kpi_card(t('tk_exp', lang),     rec_expansao, '💰', None, t('tk_exp_ctx', lang)),
+        kpi_card(t('tk_risco', lang),   rec_risco,    '⚠️', None, t('tk_risco_ctx', lang)),
+        kpi_card(t('tk_upsell', lang),  upsell_n,     '📈', None, t('tk_upsell_ctx', lang), value_fmt='int'),
     ])
 
     # ────────────── INSIGHTS ──────────────
@@ -326,9 +374,10 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         insights_items.append(html.Div([
             html.Span('📈', className='insight-icon'),
             html.Div(html.Span([
-                'Os ', html.Strong('10 clientes de maior crescimento'), f' geraram ',
+                t('ti_top10_pre', lang), html.Strong(t('ti_top10_strong', lang)),
+                t('ti_top10_mid', lang),
                 html.Strong(f'{fmt_brl(top_cresc["delta_abs"].sum())}'),
-                f' ({pct_exp:.0f}% da expansão total).'
+                t('ti_top10_pos', lang, pct=f'{pct_exp:.0f}'),
             ]), className='insight-text'),
         ], className='insight-item positive'))
 
@@ -338,8 +387,8 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         insights_items.append(html.Div([
             html.Span('⚠️', className='insight-icon'),
             html.Div(html.Span([
-                'Receita em risco: ', html.Strong(fmt_brl(rec_risco)),
-                f' ({pct_r_str}% do faturamento dos últimos 12 meses) — clientes em queda ou inativos.'
+                t('ti_risco_pre', lang), html.Strong(fmt_brl(rec_risco)),
+                t('ti_risco_pos', lang, pct=pct_r_str),
             ]), className='insight-text'),
         ], className='insight-item critical'))
 
@@ -347,19 +396,19 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         insights_items.append(html.Div([
             html.Span('🚀', className='insight-icon'),
             html.Div(html.Span([
-                html.Strong(f'{upsell_n} clientes'),
-                ' com potencial imediato de upsell — crescendo mas consumindo poucos serviços.'
+                html.Strong(t('ti_upsell_strong', lang, n=upsell_n)),
+                t('ti_upsell_pos', lang),
             ]), className='insight-text'),
         ], className='insight-item positive'))
 
-    criticos = agg[agg['Status'].str.contains('Risco') & (agg['pct'] > 2)]
+    criticos = agg[agg['Status'].str.contains('🔴') & (agg['pct'] > 2)]
     if not criticos.empty:
         pct_crit = f"{criticos['pct'].sum():.1f}".replace('.', ',')
         insights_items.append(html.Div([
             html.Span('🔴', className='insight-icon'),
             html.Div(html.Span([
-                html.Strong(f'{len(criticos)} clientes críticos'),
-                f' representam {pct_crit}% da receita e estão em forte queda — ação imediata.'
+                html.Strong(t('ti_crit_strong', lang, n=len(criticos))),
+                t('ti_crit_pos', lang, pct=pct_crit),
             ]), className='insight-text'),
         ], className='insight-item critical'))
 
@@ -367,8 +416,8 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         insights_items.append(html.Div([
             html.Span('⚫', className='insight-icon'),
             html.Div(html.Span([
-                html.Strong(f'{inativo} clientes inativos'),
-                f' há mais de {TH_INATIVO_DIAS} dias — oportunidade de reativação.'
+                html.Strong(t('ti_inat_strong', lang, n=inativo)),
+                t('ti_inat_pos', lang, d=TH_INATIVO_DIAS),
             ]), className='insight-text'),
         ], className='insight-item warning'))
 
@@ -376,26 +425,26 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         insights_items.append(html.Div([
             html.Span('🔄', className='insight-icon'),
             html.Div(html.Span([
-                html.Strong(f'{recuperado} clientes recuperados'),
-                ' voltaram a faturar após pausa — monitorar consolidação.'
+                html.Strong(t('ti_recup_strong', lang, n=recuperado)),
+                t('ti_recup_pos', lang),
             ]), className='insight-text'),
         ], className='insight-item info'))
 
     insights = html.Div([
-        html.Div(['⚡ ', html.Span('Insights Gerenciais')], className='insight-panel-title'),
-        html.Div(insights_items or [html.Div('Nenhum alerta identificado.', style={'color': COLORS['text_muted']})],
+        html.Div(['⚡ ', html.Span(t('ti_panel', lang))], className='insight-panel-title'),
+        html.Div(insights_items or [html.Div(t('ti_nada', lang), style={'color': pal['text_muted']})],
                  className='insight-grid'),
     ], className='insight-panel')
 
     # ────────────── MATRIZ ESTRATÉGICA ──────────────
     STATUS_COLOR = {
-        '🟢 Crescendo':  COLORS['success'],
-        '🟡 Estável':    COLORS['warning'],
-        '🟠 Em Queda':   '#FF8C00',
-        '🔴 Em Risco':   COLORS['danger'],
-        '⚫ Inativo':    COLORS['text_muted'],
-        '🆕 Novo':       COLORS['primary'],
-        '🔄 Recuperado': COLORS['info'],
+        t('ts_cresc', lang):   COLORS['success'],
+        t('ts_estavel', lang): COLORS['warning'],
+        t('ts_queda', lang):   '#FF8C00',
+        t('ts_risco', lang):   COLORS['danger'],
+        t('ts_inativo', lang): pal['text_muted'],
+        t('ts_novo', lang):    COLORS['primary'],
+        t('ts_recup', lang):   COLORS['info'],
     }
 
     fig_matrix = go.Figure()
@@ -430,27 +479,28 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
 
     # Linhas de quadrante
     med_pct = float(agg['pct'].median()) if len(agg) > 0 else 1.0
-    fig_matrix.add_vline(x=med_pct, line_dash='dot', line_color=COLORS['border'], line_width=1)
-    fig_matrix.add_hline(y=0, line_dash='dot', line_color=COLORS['border'], line_width=1)
+    fig_matrix.add_vline(x=med_pct, line_dash='dot', line_color=pal['border'], line_width=1)
+    fig_matrix.add_hline(y=0, line_dash='dot', line_color=pal['border'], line_width=1)
 
     # Labels dos quadrantes
     for txt, x, y in [
-        ('⭐ Estrelas',     0.92, 0.95),
-        ('🚀 Oportunidades',0.08, 0.95),
-        ('⚠️ Atenção',      0.92, 0.05),
-        ('❌ Críticos',     0.08, 0.05),
+        (t('quad_estrelas', lang), 0.92, 0.95),
+        (t('quad_oport', lang),    0.08, 0.95),
+        (t('quad_atencao', lang),  0.92, 0.05),
+        (t('quad_criticos', lang), 0.08, 0.05),
     ]:
         fig_matrix.add_annotation(
             xref='paper', yref='paper', x=x, y=y,
             text=txt, showarrow=False,
-            font=dict(size=11, color=COLORS['text_muted']),
+            font=dict(size=11, color=pal['text_muted']),
             opacity=0.7,
         )
 
     fig_matrix.update_layout(
-        title='Matriz de Ação Gerencial · % Receita × Crescimento 3M',
-        xaxis_title='Participação na Receita (%)',
-        yaxis_title='Crescimento 3 Meses (%, limitado a ±200)',
+        template=tpl,
+        title=t('g_tmatriz', lang),
+        xaxis_title=t('eixo_part', lang),
+        yaxis_title=t('eixo_cresc3', lang),
         yaxis=dict(range=[-115, 215]),
         legend=dict(orientation='h', y=-0.18, font=dict(size=11)),
         height=440,
@@ -468,16 +518,17 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
             x=list(hm_data.columns),
             y=list(hm_data.index),
             colorscale=[
-                [0.0,  COLORS['surface2']],
+                [0.0,  pal['surface2']],
                 [0.3,  COLORS['primary_dark']],
                 [1.0,  COLORS['primary']],
             ],
             hovertemplate='<b>%{y}</b><br>%{x}<br>R$ %{z:.0f}K<extra></extra>',
             showscale=True,
-            colorbar=dict(title='R$ K', tickfont=dict(color=COLORS['text_secondary'], size=10)),
+            colorbar=dict(title='R$ K', tickfont=dict(color=pal['text_secondary'], size=10)),
         ))
         fig_heat.update_layout(
-            title='Heatmap · Faturamento Mensal Top 50 Clientes (R$ K)',
+            template=tpl,
+            title=t('g_heat', lang),
             xaxis=dict(tickfont=dict(size=9), title='',
                        tickformat='%m/%Y', hoverformat='%m/%Y'),
             yaxis=dict(tickfont=dict(size=9), title='', autorange='reversed'),
@@ -514,16 +565,17 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
             customdata=data[['GrupoEcon', col, 'var_3m', 'HS', 'Status']].values,
             hovertemplate=(
                 '<b>%{customdata[0]}</b><br>'
-                f'Variação: R$ %{{customdata[1]:,.0f}}<br>'
-                'Crescimento 3M: %{customdata[2]:+.1f}%<br>'
+                f'{t("h_variacao", lang)}: R$ %{{customdata[1]:,.0f}}<br>'
+                f'{t("h_cresc3m", lang)}: %{{customdata[2]:+.1f}}%<br>'
                 'Health Score: %{customdata[3]}<br>'
                 'Status: %{customdata[4]}<extra></extra>'
             ),
             text=data['val'].apply(lambda v: fmt_brl(v)),
             textposition='outside',
-            textfont=dict(size=10, color=COLORS['text_secondary']),
+            textfont=dict(size=10, color=pal['text_secondary']),
         ))
         f.update_layout(
+            template=tpl,
             title=title,
             xaxis_title='R$', yaxis_title='',
             xaxis_tickformat=',.0f',
@@ -532,8 +584,8 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         )
         return f
 
-    fig_top = ranking_fig(cresceu, 'delta_abs', 'Top 20 — Maior Crescimento (R$)', COLORS['success'])
-    fig_bot = ranking_fig(caiu,    'delta_abs', 'Top 20 — Maior Queda (R$)',       COLORS['danger'])
+    fig_top = ranking_fig(cresceu, 'delta_abs', t('g_rtop', lang), COLORS['success'])
+    fig_bot = ranking_fig(caiu,    'delta_abs', t('g_rbot', lang), COLORS['danger'])
 
     # ────────────── TABELA GERENCIAL ──────────────
     agg_s = agg.sort_values('receita', ascending=False).reset_index(drop=True)
@@ -561,23 +613,24 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
 
     cols = [
         {'name': '#', 'id': '#', 'type': 'numeric'},
-        {'name': 'Cliente', 'id': 'Cliente', 'type': 'text'},
-        col_num('Receita Total', TBL_BRL),
-        col_num('Rec. Período Ant.', TBL_BRL),
-        col_num('Var. R$', TBL_BRL_SIGNED),
-        col_num('Var. %', TBL_PCT_SIGNED),
-        {'name': 'Status', 'id': 'Status', 'type': 'text'},
+        {'name': t('col_cliente', lang), 'id': 'Cliente', 'type': 'text'},
+        {'name': t('col_rtotal', lang), 'id': 'Receita Total', 'type': 'numeric', 'format': TBL_BRL},
+        {'name': t('col_rec_ant', lang), 'id': 'Rec. Período Ant.', 'type': 'numeric', 'format': TBL_BRL},
+        {'name': t('col_var_rs', lang), 'id': 'Var. R$', 'type': 'numeric', 'format': TBL_BRL_SIGNED},
+        {'name': t('col_var_pct', lang), 'id': 'Var. %', 'type': 'numeric', 'format': TBL_PCT_SIGNED},
+        {'name': t('col_status', lang), 'id': 'Status', 'type': 'text'},
         {'name': 'HS', 'id': 'HS', 'type': 'numeric'},
-        {'name': 'Health', 'id': 'Health', 'type': 'text'},
-        {'name': 'Última Compra', 'id': 'Última Compra', 'type': 'text'},
-        {'name': 'Dias s/ Compra', 'id': 'Dias s/ Compra', 'type': 'numeric'},
-        {'name': 'Serviços', 'id': 'Serviços', 'type': 'numeric'},
-        col_num('Part. %', TBL_PCT),
-        {'name': 'Upsell', 'id': 'Upsell', 'type': 'text'},
-        {'name': 'Cross-sell', 'id': 'Cross-sell', 'type': 'text'},
+        {'name': t('col_health', lang), 'id': 'Health', 'type': 'text'},
+        {'name': t('col_ult_compra', lang), 'id': 'Última Compra', 'type': 'text'},
+        {'name': t('col_dias_compra', lang), 'id': 'Dias s/ Compra', 'type': 'numeric'},
+        {'name': t('col_serv', lang), 'id': 'Serviços', 'type': 'numeric'},
+        {'name': t('col_part', lang), 'id': 'Part. %', 'type': 'numeric', 'format': TBL_PCT},
+        {'name': t('col_upsell', lang), 'id': 'Upsell', 'type': 'text'},
+        {'name': t('col_xsell', lang), 'id': 'Cross-sell', 'type': 'text'},
     ] if records else []
 
-    return kpis, insights, fig_matrix, fig_heat, fig_top, fig_bot, records, cols
+    return (kpis, insights, fig_matrix, fig_heat, fig_top, fig_bot, records, cols,
+            *extras)
 
 
 # ────────────────────────────────────────────────
@@ -593,12 +646,18 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
     Input('filter-produto',   'value'),
     Input('filter-valor-min', 'value'),
     Input('filter-valor-max', 'value'),
+    Input('theme-select', 'value'),
+    Input('lang-select', 'value'),
 )
-def update_detail(active_cell, table_data, start_date, end_date, anos, produto, valor_min, valor_max):
+def update_detail(active_cell, table_data, start_date, end_date, anos, produto, valor_min, valor_max,
+                  tema, lang):
+    tema = tema or 'dark'
+    lang = lang or 'pt'
+    pal  = get_palette(tema)
     if not active_cell or not table_data:
         return html.Div(
-            '👆 Clique em qualquer cliente na tabela para ver análise detalhada.',
-            style={'color': COLORS['text_muted'], 'padding': '16px', 'fontSize': '13px'},
+            t('t_clique', lang),
+            style={'color': pal['text_muted'], 'padding': '16px', 'fontSize': '13px'},
         )
 
     row   = table_data[active_cell['row']]
@@ -611,7 +670,7 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, produto, 
     df_cli  = df_base[df_base['GrupoEcon'].astype(str) == grupo]
 
     if df_cli.empty:
-        return html.Div('Sem dados para este cliente.', style={'color': COLORS['text_muted']})
+        return html.Div(t('t_sem', lang), style={'color': pal['text_muted']})
 
     # Evolução mensal (últimos 24 meses)
     monthly = df_cli.groupby('AnoMesStr', observed=True)['Vlr.Total'].sum().sort_index().tail(24)
@@ -622,17 +681,18 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, produto, 
     fig_evo = go.Figure()
     fig_evo.add_trace(go.Bar(
         x=list(monthly.index), y=[float(v) for v in monthly.values],
-        name='Receita', marker_color=COLORS['primary'], marker_opacity=0.8,
+        name=t('g_receita', lang), marker_color=COLORS['primary'], marker_opacity=0.8,
         hovertemplate='<b>%{x}</b><br>R$ %{y:,.0f}<extra></extra>',
     ))
     ma3 = monthly.rolling(3).mean()
     fig_evo.add_trace(go.Scatter(
         x=list(ma3.index), y=[float(v) if pd.notna(v) else None for v in ma3.values],
-        name='Média 3M', line=dict(color=COLORS['info'], width=2, dash='dot'),
-        hovertemplate='MM3: R$ %{y:,.0f}<extra></extra>',
+        name=t('g_mm3', lang), line=dict(color=COLORS['info'], width=2, dash='dot'),
+        hovertemplate=t('h_mm3', lang) + ': R$ %{y:,.0f}<extra></extra>',
     ))
     fig_evo.update_layout(
-        title=f'Evolução Mensal · {grupo}',
+        template=plotly_template(tema),
+        title=t('d_evo_de', lang, nome=grupo),
         xaxis_title='', yaxis_title='R$', yaxis_tickformat=',.0f',
         xaxis=dict(tickformat='%m/%Y', hoverformat='%m/%Y'),
         legend=dict(orientation='h', y=1.1), height=300,
@@ -650,12 +710,13 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, produto, 
         textfont=dict(size=10),
     ))
     fig_svc.update_layout(
-        title='Mix de Serviços', height=320,
+        template=plotly_template(tema),
+        title=t('d_mix', lang), height=320,
         showlegend=False,
         annotations=[dict(
-            text=f'{len(svc)}<br>serviços',
+            text=f'{len(svc)}<br>{t("td_servicos", lang)}',
             x=0.5, y=0.5, showarrow=False,
-            font=dict(size=13, color=COLORS['text']),
+            font=dict(size=13, color=pal['text']),
         )],
     )
 
@@ -672,41 +733,41 @@ def update_detail(active_cell, table_data, start_date, end_date, anos, produto, 
         # Header do cliente
         html.Div([
             html.Div([
-                html.Div(grupo, style={'fontSize': '17px', 'fontWeight': '700', 'color': COLORS['text']}),
+                html.Div(grupo, className='detail-name'),
                 html.Div([
                     html.Span(status, style={'fontSize': '13px', 'marginRight': '16px'}),
-                    html.Span(f'Health Score: ', style={'color': COLORS['text_muted'], 'fontSize': '12px'}),
+                    html.Span('Health Score: ', style={'color': pal['text_muted'], 'fontSize': '12px'}),
                     html.Span(f'{hs}/100', style={'fontWeight': '700', 'color': hs_color, 'fontSize': '16px'}),
                     html.Span(f' · {row["Health"]}', style={'color': hs_color, 'fontSize': '12px'}),
                 ], style={'marginTop': '4px', 'display': 'flex', 'alignItems': 'center'}),
             ]),
             html.Div([
-                html.Span(fmt_brl(rec_total), style={'fontSize': '22px', 'fontWeight': '800', 'color': COLORS['primary']}),
-                html.Span(f" · {float(row['Part. %']):.2f}% da carteira".replace('.', ','), style={'color': COLORS['text_secondary'], 'fontSize': '12px', 'marginLeft': '8px'}),
+                html.Span(fmt_brl(rec_total), className='detail-val'),
+                html.Span(t('d_carteira', lang, pct=f"{float(row['Part. %']):.2f}".replace('.', ',')), className='detail-ctx'),
             ]),
         ], style={
             'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center',
-            'marginBottom': '20px', 'paddingBottom': '16px', 'borderBottom': f'1px solid {COLORS["border"]}',
+            'marginBottom': '20px', 'paddingBottom': '16px', 'borderBottom': f'1px solid {pal["border"]}',
         }),
 
         # KPIs do cliente
         html.Div([
-            html.Div([html.Div('NFs Emitidas', className='kpi-label'), html.Div(f'{nfs:,}', className='kpi-value'), html.Div('no período', className='kpi-context')], className='kpi-card'),
-            html.Div([html.Div('Ticket Médio NF', className='kpi-label'), html.Div(fmt_brl(ticket), className='kpi-value'), html.Div('por nota fiscal', className='kpi-context')], className='kpi-card'),
-            html.Div([html.Div('Frequência', className='kpi-label'), html.Div(f'{freq:.1f}', className='kpi-value'), html.Div('NFs por mês', className='kpi-context')], className='kpi-card'),
-            html.Div([html.Div('Serviços Distintos', className='kpi-label'), html.Div(str(len(svc)), className='kpi-value'), html.Div('produtos contratados', className='kpi-context')], className='kpi-card'),
-            html.Div([html.Div('Primeira Compra', className='kpi-label'), html.Div(primeira, className='kpi-value', style={'fontSize': '18px'}), html.Div('início do relacionamento', className='kpi-context')], className='kpi-card'),
-            html.Div([html.Div('Última Compra', className='kpi-label'), html.Div(ultima, className='kpi-value', style={'fontSize': '18px'}), html.Div(f'{row["Dias s/ Compra"]} dias atrás', className='kpi-context')], className='kpi-card'),
+            html.Div([html.Div(t('td_nfs', lang), className='kpi-label'), html.Div(f'{nfs:,}', className='kpi-value'), html.Div(t('td_nfs_ctx', lang), className='kpi-context')], className='kpi-card'),
+            html.Div([html.Div(t('td_ticket', lang), className='kpi-label'), html.Div(fmt_brl(ticket), className='kpi-value'), html.Div(t('td_ticket_ctx', lang), className='kpi-context')], className='kpi-card'),
+            html.Div([html.Div(t('td_freq', lang), className='kpi-label'), html.Div(f'{freq:.1f}'.replace('.', ','), className='kpi-value'), html.Div(t('td_freq_ctx', lang), className='kpi-context')], className='kpi-card'),
+            html.Div([html.Div(t('td_serv', lang), className='kpi-label'), html.Div(str(len(svc)), className='kpi-value'), html.Div(t('td_serv_ctx', lang), className='kpi-context')], className='kpi-card'),
+            html.Div([html.Div(t('td_prim', lang), className='kpi-label'), html.Div(primeira, className='kpi-value', style={'fontSize': '18px'}), html.Div(t('td_prim_ctx', lang), className='kpi-context')], className='kpi-card'),
+            html.Div([html.Div(t('td_ult', lang), className='kpi-label'), html.Div(ultima, className='kpi-value', style={'fontSize': '18px'}), html.Div(t('td_ult_ctx', lang, d=row['Dias s/ Compra']), className='kpi-context')], className='kpi-card'),
         ], className='kpi-grid', style={'marginBottom': '20px'}),
 
         # Gráficos
         html.Div([
             html.Div([
-                html.Div([html.Div('Evolução Mensal · Últimos 24 Meses', className='chart-title'), html.Div('Barras + Média Móvel 3 Meses', className='chart-subtitle')], className='chart-card-header'),
+                html.Div([html.Div(t('td_evo24', lang), className='chart-title'), html.Div(t('td_evo24_sub', lang), className='chart-subtitle')], className='chart-card-header'),
                 dcc.Graph(figure=fig_evo, config={'displayModeBar': False}),
             ], className='chart-card'),
             html.Div([
-                html.Div([html.Div('Mix de Serviços', className='chart-title'), html.Div(f'{len(svc)} serviços contratados', className='chart-subtitle')], className='chart-card-header'),
+                html.Div([html.Div(t('d_mix', lang), className='chart-title'), html.Div(t('td_mix_sub', lang, n=len(svc)), className='chart-subtitle')], className='chart-card-header'),
                 dcc.Graph(figure=fig_svc, config={'displayModeBar': False}),
             ], className='chart-card'),
         ], className='grid-2'),

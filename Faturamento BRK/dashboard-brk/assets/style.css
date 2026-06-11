@@ -692,3 +692,31 @@ td.CalendarDay {
 .text-muted { color: var(--text-muted); font-size: 12px; }
 .text-secondary { color: var(--text-secondary); }
 .fw-600 { font-weight: 600; }
+
+/* ════════════════════════════════════════════
+   TEMA CLARO — ativado via data-theme='light' no #app-shell
+   (o CSS inteiro usa var(--*), então basta redefinir as variáveis)
+   ════════════════════════════════════════════ */
+#app-shell {
+  background: var(--bg);
+  width: 100%;
+}
+
+#app-shell[data-theme='light'] {
+  --bg: #F2F4F8;
+  --surface: #FFFFFF;
+  --surface2: #F1F5F9;
+  --border: #E2E8F0;
+  --text: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* textos de detalhe dos drill-downs (antes eram cor inline) */
+.detail-name { font-size: 16px; font-weight: 700; color: var(--text); }
+.detail-val  { font-size: 20px; font-weight: 700; color: var(--primary); }
+.detail-ctx  { font-size: 13px; color: var(--text-secondary); margin-left: 8px; }
+
+/* seletores de tema e idioma na barra de filtros */
+.pref-group .dash-dropdown .Select-control { min-width: 96px !important; }

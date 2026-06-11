@@ -106,10 +106,10 @@ def build_filter_bar():
                 dcc.Dropdown(
                     id='theme-select',
                     options=[
-                        {'label': '🌙 Dark', 'value': 'dark'},
                         {'label': '☀️ Light', 'value': 'light'},
+                        {'label': '🌙 Dark', 'value': 'dark'},
                     ],
-                    value='dark', clearable=False, searchable=False,
+                    value='light', clearable=False, searchable=False,
                     persistence=True, persistence_type='local',
                     style={'minWidth': '110px', **_DROP},
                 ),

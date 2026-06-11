@@ -62,6 +62,8 @@ app.layout = html.Div(
         ),
     ],
     id='app-shell',
+    # tema inicial light já no HTML — evita flash escuro antes do callback
+    **{'data-theme': 'light'},
 )
 
 

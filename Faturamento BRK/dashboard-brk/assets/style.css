@@ -883,11 +883,16 @@ td.CalendarDay {
 .insight-panel { margin-bottom: 14px; padding: 14px 16px; }
 .grid-2 { gap: 14px; }
 
-/* ── Tabela de clientes: affordance de clique ──
-   linhas são clicáveis (abrem o detalhe do cliente) — cursor de mão
-   e realce laranja da linha inteira no hover deixam isso visível */
-#clientes-table .dash-cell { cursor: pointer; }
-#clientes-table tr:hover .dash-cell {
+/* ── Tabelas clicáveis (Clientes, Produtos, Radar): affordance de clique ──
+   linhas abrem o painel de detalhe — cursor de mão e realce laranja da
+   linha inteira no hover deixam isso visível */
+#clientes-table .dash-cell,
+#produtos-table .dash-cell,
+#tend-table .dash-cell { cursor: pointer; }
+
+#clientes-table tr:hover .dash-cell,
+#produtos-table tr:hover .dash-cell,
+#tend-table tr:hover .dash-cell {
   background: rgba(255, 101, 0, 0.09) !important;
 }
 
@@ -903,11 +908,16 @@ td.CalendarDay {
 }
 
 /* enquadramento: a tabela ocupa exatamente a largura do card e as colunas
-   seguem as larguras percentuais (_COL_WIDTHS em clientes.py).
+   seguem as larguras percentuais (_COL_WIDTHS em cada página).
    Forçar isso via prop css= do DataTable infla a tabela p/ 800000px com
    virtualization — tem que ser aqui no CSS, escopado ao container */
-#clientes-table .dash-fixed-content { width: 100% !important; }
-#clientes-table table.cell-table {
+#clientes-table .dash-fixed-content,
+#produtos-table .dash-fixed-content,
+#tend-table .dash-fixed-content { width: 100% !important; }
+
+#clientes-table table.cell-table,
+#produtos-table table.cell-table,
+#tend-table table.cell-table {
   table-layout: fixed !important;
   width: 100% !important;
 }

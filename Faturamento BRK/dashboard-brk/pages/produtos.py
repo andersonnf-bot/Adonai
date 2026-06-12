@@ -13,8 +13,21 @@ from components.i18n import t
 
 dash.register_page(__name__, path='/produtos', name='Produtos & Serviços', order=2)
 
+# larguras percentuais por coluna (soma = 100): a tabela ocupa 100% do card
+# e todas as colunas cabem na tela sem rolagem horizontal (junto com a regra
+# table-layout fixed do style.css — ver #produtos-table)
+_COL_WIDTHS = {
+    '#': '4%', 'Serviço': '26%', 'Receita Total': '10.5%', '% Portfólio': '8%',
+    'Último Mês': '10%', 'Var. M/M': '7.5%', 'Var. 3M': '7.5%',
+    'Clientes': '7%', 'Ticket Médio': '10.5%', 'Status': '9%',
+}
+
 _CELL = {
-    'style_table': {'overflowX': 'auto', 'borderRadius': '8px'},
+    'style_table': {'overflowX': 'auto', 'width': '100%', 'borderRadius': '8px'},
+    'style_cell_conditional': [
+        {'if': {'column_id': col}, 'width': w, 'minWidth': w, 'maxWidth': w}
+        for col, w in _COL_WIDTHS.items()
+    ],
     'style_header': {
         'backgroundColor': COLORS['surface2'], 'color': COLORS['text_secondary'],
         'fontWeight': '600', 'fontSize': '11px', 'textTransform': 'uppercase',
@@ -52,7 +65,12 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div('Ranking Completo de Serviços', id='p-c2t', className='chart-title'),
-                html.Div('Ordenável · portfólio completo', id='p-c2s', className='chart-subtitle'),
+                html.Div([
+                    html.Span('Ordenável · portfólio completo',
+                              id='p-c2s', className='chart-subtitle'),
+                    html.Span('👆 Clique numa linha para detalhar',
+                              id='p-hint', className='table-hint-pill'),
+                ], style={'display': 'flex', 'alignItems': 'center', 'gap': '10px'}),
             ], className='chart-card-header'),
             dash_table.DataTable(
                 id='produtos-table',
@@ -60,6 +78,8 @@ layout = html.Div([
                 sort_action='native',
                 filter_action='native',
                 filter_options={'case': 'insensitive'},
+                tooltip_delay=0,
+                tooltip_duration=None,
                 **_CELL,
             ),
         ], className='chart-card'),
@@ -73,12 +93,14 @@ layout = html.Div([
     Output('produtos-bubble', 'figure'),
     Output('produtos-table', 'data'),
     Output('produtos-table', 'columns'),
+    Output('produtos-table', 'tooltip_data'),
     Output('produtos-table', 'style_header'),
     Output('produtos-table', 'style_cell'),
     Output('produtos-table', 'style_data_conditional'),
     Output('p-title', 'children'), Output('p-sub', 'children'),
     Output('p-c1t', 'children'), Output('p-c1s', 'children'),
     Output('p-c2t', 'children'), Output('p-c2s', 'children'),
+    Output('p-hint', 'children'),
     Input('filter-date', 'start_date'),
     Input('filter-date', 'end_date'),
     Input('filter-ano', 'value'),
@@ -95,17 +117,27 @@ def update_produtos(start_date, end_date, anos, cliente, produto, valor_min, val
     lang = lang or 'pt'
     pal  = get_palette(tema)
     ts   = table_styles(tema)
-    extras = (ts['style_header'], ts['style_cell'], [ts['zebra']],
+    # cabeçalho quebra em 2 linhas quando preciso; células densas — tudo
+    # para a tabela inteira caber na tela sem rolagem horizontal
+    extras = ({**ts['style_header'], 'whiteSpace': 'normal', 'height': 'auto',
+               'padding': '8px 8px'},
+              {**ts['style_cell'], 'padding': '6px 8px'},
+              [ts['zebra'],
+               # célula clicada: destaque laranja (abre o detalhe abaixo)
+               {'if': {'state': 'active'},
+                'backgroundColor': 'rgba(255,101,0,0.12)',
+                'border': f'1px solid {pal["primary"]}'}],
               t('p_title', lang), t('p_sub', lang),
               t('p_matriz', lang), t('p_matriz_sub', lang),
-              t('p_rank', lang), t('p_rank_sub', lang))
+              t('p_rank', lang), t('p_rank_sub', lang),
+              t('cl_hint_click', lang))
     df_all = get_liquid()
     df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
 
     if df.empty:
         empty_fig = go.Figure()
         empty_fig.update_layout(title=t('t_vazio', lang), template=plotly_template(tema))
-        return empty_fig, [], [], *extras
+        return empty_fig, [], [], [], *extras
 
     monthly = df.groupby(['Descricao', 'AnoMesStr'])['Vlr.Total'].sum().unstack(fill_value=0)
     months_sorted = sorted(monthly.columns)
@@ -241,7 +273,12 @@ def update_produtos(start_date, end_date, anos, cliente, produto, valor_min, val
         {'name': t('col_ticket', lang), 'id': 'Ticket Médio', 'type': 'numeric', 'format': TBL_BRL_2},
         {'name': t('col_status', lang), 'id': 'Status', 'type': 'text'},
     ] if records else []
-    return fig_bubble, records, columns, *extras
+
+    # nome completo do serviço no hover (a coluna trunca com ellipsis)
+    tooltips = [{'Serviço': {'value': rec['Serviço'], 'type': 'text'}}
+                for rec in records]
+
+    return fig_bubble, records, columns, tooltips, *extras
 
 
 @callback(

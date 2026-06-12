@@ -57,6 +57,16 @@ Auditoria completa de código + inspeção visual página a página.
 - Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
 - Para reverter qualquer item: `git revert` do commit correspondente
 
+### Etapa 2 — Mesma dinâmica em Produtos e Radar (12/06)
+- Tabelas de Produtos & Serviços (10 colunas) e Central de Gestão do Radar
+  (15 colunas) enquadradas na tela: larguras percentuais + table-layout fixed
+  via CSS, cabeçalho em 2 linhas, células densas
+- Cursor de mão, hover laranja na linha, pílula "clique para detalhar" e
+  célula ativa destacada também nas duas páginas; tooltip com nome completo
+  (serviço/cliente) quando a coluna trunca
+- Larguras do Radar calibradas no preview até zero células cortadas
+  (inclusive outliers tipo "+2573,4%")
+
 ### Etapa 2 — Tabela de Clientes enquadrada + affordance de clique (12/06)
 - **Toda a tabela cabe na tela** (fim da rolagem horizontal): larguras
   percentuais por coluna (`_COL_WIDTHS`) + `table-layout: fixed` no CSS.

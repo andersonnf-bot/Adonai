@@ -20,8 +20,23 @@ TH_RISCO        = -30   # var% para "Em Risco"
 TH_INATIVO_DIAS = 90    # dias sem NF para "Inativo"
 TH_NOVO_DIAS    = 90    # dias desde 1ª NF para "Novo"
 
+# larguras percentuais por coluna (soma = 100): a tabela ocupa 100% do card
+# e todas as 15 colunas cabem na tela sem rolagem horizontal (junto com a
+# regra table-layout fixed do style.css — ver #tend-table)
+_COL_WIDTHS = {
+    '#': '3%', 'Cliente': '11.5%', 'Receita Total': '9%',
+    'Rec. Período Ant.': '9%', 'Var. R$': '9.5%', 'Var. %': '6.5%',
+    'Status': '9.5%', 'HS': '3%', 'Health': '7.5%',
+    'Última Compra': '7%', 'Dias s/ Compra': '5%', 'Serviços': '4.5%',
+    'Part. %': '5%', 'Upsell': '5%', 'Cross-sell': '5%',
+}
+
 _CELL = {
-    'style_table': {'overflowX': 'auto', 'borderRadius': '8px'},
+    'style_table': {'overflowX': 'auto', 'width': '100%', 'borderRadius': '8px'},
+    'style_cell_conditional': [
+        {'if': {'column_id': col}, 'width': w, 'minWidth': w, 'maxWidth': w}
+        for col, w in _COL_WIDTHS.items()
+    ],
     'style_header': {
         'backgroundColor': COLORS['surface2'], 'color': COLORS['text_secondary'],
         'fontWeight': '600', 'fontSize': '11px', 'textTransform': 'uppercase',
@@ -51,6 +66,10 @@ _CELL = {
 def _tend_conditionals(pal):
     return [
         {'if': {'row_index': 'odd'}, 'backgroundColor': pal['surface2']},
+        # célula clicada: destaque laranja (abre o detalhe do cliente abaixo)
+        {'if': {'state': 'active'},
+         'backgroundColor': 'rgba(255,101,0,0.12)',
+         'border': f'1px solid {pal["primary"]}'},
         {'if': {'filter_query': '{Status} contains "🟢"'}, 'color': pal['success']},
         {'if': {'filter_query': '{Status} contains "🟠"'}, 'color': pal['danger']},
         {'if': {'filter_query': '{Status} contains "🔴"'}, 'color': '#FF6060'},
@@ -131,7 +150,12 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div('Central de Gestão de Clientes', id='t-c5t', className='chart-title'),
-                html.Div('Todos os clientes · Health Score · Status · Ordenável · Exportável', id='t-c5s', className='chart-subtitle'),
+                html.Div([
+                    html.Span('Todos os clientes · Health Score · Status · Ordenável · Exportável',
+                              id='t-c5s', className='chart-subtitle'),
+                    html.Span('👆 Clique numa linha para detalhar',
+                              id='t-hint', className='table-hint-pill'),
+                ], style={'display': 'flex', 'alignItems': 'center', 'gap': '10px'}),
             ], className='chart-card-header'),
             dash_table.DataTable(
                 id='tend-table',
@@ -141,6 +165,8 @@ layout = html.Div([
                 filter_options={'case': 'insensitive'},
                 export_format='csv',
                 export_headers='display',
+                tooltip_delay=0,
+                tooltip_duration=None,
                 **_CELL,
             ),
         ], className='chart-card'),
@@ -164,6 +190,7 @@ layout = html.Div([
     Output('tend-rank-bot', 'figure'),
     Output('tend-table',    'data'),
     Output('tend-table',    'columns'),
+    Output('tend-table',    'tooltip_data'),
     Output('tend-table',    'style_header'),
     Output('tend-table',    'style_cell'),
     Output('tend-table',    'style_data_conditional'),
@@ -174,6 +201,7 @@ layout = html.Div([
     Output('t-c3t', 'children'), Output('t-c3s', 'children'),
     Output('t-c4t', 'children'), Output('t-c4s', 'children'),
     Output('t-c5t', 'children'), Output('t-c5s', 'children'),
+    Output('t-hint', 'children'),
     Input('filter-date',      'start_date'),
     Input('filter-date',      'end_date'),
     Input('filter-ano',       'value'),
@@ -191,7 +219,12 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
     pal  = get_palette(tema)
     ts   = table_styles(tema)
     tpl  = plotly_template(tema)
-    extras = (ts['style_header'], ts['style_cell'], _tend_conditionals(pal),
+    # cabeçalho quebra em 2 linhas quando preciso; células densas — tudo
+    # para as 15 colunas caberem na tela sem rolagem horizontal
+    extras = ({**ts['style_header'], 'whiteSpace': 'normal', 'height': 'auto',
+               'padding': '8px 6px'},
+              {**ts['style_cell'], 'padding': '6px 8px'},
+              _tend_conditionals(pal),
               t('t_title', lang), t('t_sub', lang),
               t('thresholds_lbl', lang),
               t('t_thresholds', lang, c=TH_CRESCIMENTO, q=abs(TH_QUEDA), i=TH_INATIVO_DIAS),
@@ -199,7 +232,8 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
               t('t_heat', lang), t('t_heat_sub', lang),
               t('t_rtop', lang), t('t_rtop_sub', lang),
               t('t_rbot', lang), t('t_rbot_sub', lang),
-              t('t_central', lang), t('t_central_sub', lang))
+              t('t_central', lang), t('t_central_sub', lang),
+              t('cl_hint_click', lang))
     df_all = get_liquid()
     df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
 
@@ -212,7 +246,7 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
 
     if df.empty:
         return (html.Div(t('t_semdados', lang)), html.Div(), empty_fig, empty_fig,
-                empty_fig, empty_fig, [], [], *extras)
+                empty_fig, empty_fig, [], [], [], *extras)
 
     now = pd.Timestamp(df['Emissao'].max())
 
@@ -633,8 +667,12 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
         {'name': t('col_xsell', lang), 'id': 'Cross-sell', 'type': 'text'},
     ] if records else []
 
+    # nome completo do cliente no hover (a coluna trunca com ellipsis)
+    tooltips = [{'Cliente': {'value': rec['Cliente'], 'type': 'text'}}
+                for rec in records]
+
     return (kpis, insights, fig_matrix, fig_heat, fig_top, fig_bot, records, cols,
-            *extras)
+            tooltips, *extras)
 
 
 # ────────────────────────────────────────────────

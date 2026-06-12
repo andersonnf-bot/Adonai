@@ -720,3 +720,97 @@ td.CalendarDay {
 
 /* seletores de tema e idioma na barra de filtros */
 .pref-group .dash-dropdown .Select-control { min-width: 96px !important; }
+
+/* ════════════════════════════════════════════
+   COCKPIT EXECUTIVO — Visão Executiva densa
+   ════════════════════════════════════════════ */
+
+/* header em linha única */
+.page-header-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.page-header-compact .page-title { font-size: 17px; }
+
+.page-subtitle-inline {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: 10px;
+}
+
+/* grid principal: gráficos + trilho de insights */
+.ov-cockpit {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.ov-main { min-width: 0; }
+
+.ov-main .chart-card { margin-bottom: 14px; padding: 14px 16px; }
+.ov-main .chart-card-header { margin-bottom: 8px; }
+.ov-main .grid-2 { gap: 14px; }
+
+/* trilho de insights: lista vertical compacta e fixa ao rolar */
+.insight-rail .insight-panel {
+  position: sticky;
+  top: 118px;
+  margin-bottom: 0;
+  padding: 12px 14px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+.insight-rail .insight-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.insight-rail .insight-item {
+  font-size: 12px;
+  padding: 8px 10px;
+  line-height: 1.4;
+}
+
+.insight-rail .insight-icon { font-size: 13px; }
+
+/* KPIs em dois pesos */
+.kpi-grid--hero {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.kpi-grid--hero .kpi-card { padding: 14px 16px; }
+.kpi-grid--hero .kpi-value { font-size: 22px; }
+.kpi-grid--hero .kpi-card-header { margin-bottom: 8px; }
+
+.kpi-grid--mini {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.kpi-card--sm { padding: 8px 14px; }
+.kpi-card--sm .kpi-card-header { margin-bottom: 2px; }
+.kpi-card--sm .kpi-value { font-size: 15px; }
+.kpi-card--sm .kpi-icon { font-size: 13px; }
+.kpi-card--sm .kpi-label { font-size: 9.5px; }
+.kpi-card--sm .kpi-footer { margin-top: 2px; }
+.kpi-card--sm .kpi-context { font-size: 10px; }
+
+/* aproveitamento geral da página */
+#page-content { padding: 16px 20px; }
+
+/* tela estreita: trilho desce para baixo dos gráficos */
+@media (max-width: 1180px) {
+  .ov-cockpit { grid-template-columns: 1fr; }
+  .insight-rail .insight-panel { position: static; max-height: none; }
+}

@@ -57,6 +57,16 @@ Auditoria completa de código + inspeção visual página a página.
 - Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
 - Para reverter qualquer item: `git revert` do commit correspondente
 
+### Etapa 2 — Visão Executiva vira Cockpit Executivo (12/06)
+- Header em linha única (título + subtítulo inline + tag de mês parcial)
+- KPIs em dois pesos: 6 heróis (Receita, 12M, 6M, Trimestre, Mês, MRR) +
+  4 compactos (clientes e tickets)
+- Gráfico de Receita Mensal como herói no topo da coluna principal
+- **Insights viram trilho lateral** fixo (sticky) — visíveis durante a rolagem
+- Títulos internos dos gráficos removidos (duplicavam o cabeçalho do card);
+  informação dinâmica foi para o subtítulo (risco de concentração, pico/vale)
+- Espaçamentos reduzidos — primeira tela mostra KPIs + tendência + alertas
+
 ### Tema claro + 3 idiomas (11/06)
 - Seletores na barra de filtros: 🌙 Dark / ☀️ Light e 🇧🇷 PT / 🇺🇸 EN / 🇪🇸 ES,
   memorizados pelo navegador de cada usuário

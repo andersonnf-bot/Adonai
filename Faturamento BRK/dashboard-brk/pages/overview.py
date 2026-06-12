@@ -14,83 +14,48 @@ from components.i18n import t, meses_label
 
 dash.register_page(__name__, path='/', name='Visão Executiva', order=0)
 
+def _card(graph_id, title_id, sub_id, height=None):
+    style = {'height': height} if height else None
+    return html.Div([
+        html.Div([
+            html.Div([
+                html.Div('', id=title_id, className='chart-title'),
+                html.Div('', id=sub_id, className='chart-subtitle'),
+            ]),
+        ], className='chart-card-header'),
+        dcc.Graph(id=graph_id, config={'displayModeBar': False}, style=style),
+    ], className='chart-card')
+
+
 layout = html.Div([
+    # header em linha única — título pequeno, subtítulo inline, tag à direita
     html.Div([
         html.Div([
-            html.Div('Visão Executiva', id='ov-title', className='page-title'),
-            html.Div('Consolidado de faturamento · BRK Nstech', id='ov-sub', className='page-subtitle'),
+            html.Span('Visão Executiva', id='ov-title', className='page-title'),
+            html.Span('Consolidado de faturamento · BRK Nstech', id='ov-sub',
+                      className='page-subtitle-inline'),
         ]),
         html.Span('', id='overview-partial-tag'),
-    ], className='page-header', style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'flex-start'}),
+    ], className='page-header-compact'),
 
-    html.Div(id='overview-insights'),
     html.Div(id='overview-kpis'),
 
+    # cockpit: coluna principal de gráficos + trilho lateral de insights
     html.Div([
         html.Div([
+            _card('overview-chart-monthly', 'ov-c1t', 'ov-c1s'),
             html.Div([
-                html.Div([
-                    html.Div('Receita Mensal', id='ov-c1t', className='chart-title'),
-                    html.Div('Evolução com linha de tendência · barras por série', id='ov-c1s', className='chart-subtitle'),
-                ]),
-            ], className='chart-card-header'),
-            dcc.Graph(id='overview-chart-monthly', config={'displayModeBar': False}),
-        ], className='chart-card'),
-
-        html.Div([
+                _card('overview-chart-yoy', 'ov-c2t', 'ov-c2s'),
+                _card('overview-chart-cumulative', 'ov-c6t', 'ov-c6s'),
+            ], className='grid-2'),
             html.Div([
-                html.Div([
-                    html.Div('YoY · Comparativo Anual', id='ov-c2t', className='chart-title'),
-                    html.Div('Receita mensal sobreposta por ano', id='ov-c2s', className='chart-subtitle'),
-                ]),
-            ], className='chart-card-header'),
-            dcc.Graph(id='overview-chart-yoy', config={'displayModeBar': False}),
-        ], className='chart-card'),
-    ], className='grid-2'),
-
-    html.Div([
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.Div('Composição por Serviço', id='ov-c3t', className='chart-title'),
-                    html.Div('Treemap · portfólio completo de serviços', id='ov-c3s', className='chart-subtitle'),
-                ]),
-            ], className='chart-card-header'),
-            dcc.Graph(id='overview-chart-treemap', config={'displayModeBar': False}, style={'height': '420px'}),
-        ], className='chart-card'),
-
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.Div('Concentração de Clientes', id='ov-c4t', className='chart-title'),
-                    html.Div('Distribuição da receita por faixa de cliente', id='ov-c4s', className='chart-subtitle'),
-                ]),
-            ], className='chart-card-header'),
-            dcc.Graph(id='overview-chart-concentration', config={'displayModeBar': False}, style={'height': '420px'}),
-        ], className='chart-card'),
-    ], className='grid-2'),
-
-    html.Div([
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.Div('Sazonalidade · Receita Média por Mês', id='ov-c5t', className='chart-title'),
-                    html.Div('Padrão histórico — identifica meses fortes e fracos', id='ov-c5s', className='chart-subtitle'),
-                ]),
-            ], className='chart-card-header'),
-            dcc.Graph(id='overview-chart-heatmap', config={'displayModeBar': False}),
-        ], className='chart-card'),
-
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.Div('Acumulado do Ano', id='ov-c6t', className='chart-title'),
-                    html.Div('Running total · ano atual vs. anterior', id='ov-c6s', className='chart-subtitle'),
-                ]),
-            ], className='chart-card-header'),
-            dcc.Graph(id='overview-chart-cumulative', config={'displayModeBar': False}),
-        ], className='chart-card'),
-    ], className='grid-2'),
+                _card('overview-chart-concentration', 'ov-c4t', 'ov-c4s', '330px'),
+                _card('overview-chart-treemap', 'ov-c3t', 'ov-c3s', '330px'),
+            ], className='grid-2'),
+            _card('overview-chart-heatmap', 'ov-c5t', 'ov-c5s'),
+        ], className='ov-main'),
+        html.Div(id='overview-insights', className='insight-rail'),
+    ], className='ov-cockpit'),
 
 ], id='page-content')
 
@@ -202,17 +167,21 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         .mean()
     ) if len(top5_svc) > 0 and n > 0 else 0.0
 
-    cards = kpi_grid([
-        kpi_card(t('k_rliq', lang),  receita_liquida,    '✅', None,      t('k_rliq_ctx', lang)),
-        kpi_card('MRR',              mrr,                '📅', None,      t('k_mrr_ctx', lang)),
-        kpi_card(t('k_f12m', lang), fat_12m,             '📆', delta_12m, t('k_f12m_ctx', lang)),
-        kpi_card(t('k_f6m', lang),   fat_6m,             '📊', delta_6m,  t('k_f6m_ctx', lang)),
-        kpi_card(t('k_f3m', lang),   fat_3m,             '📈', delta_3m,  t('k_f3m_ctx', lang)),
-        kpi_card(t('k_f1m', lang),   fat_1m,             '🗓️', delta_1m,  t('k_f1m_ctx', lang, mes=ultimo_mes or '—')),
-        kpi_card(t('k_clip', lang),  clientes_periodo,   '🏢', None,      t('k_clip_ctx', lang), value_fmt='int'),
-        kpi_card(t('k_clim', lang),  clientes_ult_mes,   '👥', None,      t('k_clim_ctx', lang, mes=ultimo_mes or '—'), value_fmt='int'),
-        kpi_card(t('k_tcli', lang),  ticket_cliente_mes, '🎯', None,      t('k_tcli_ctx', lang)),
-        kpi_card(t('k_top5', lang),  ticket_top5,        '🏆', None,      t('k_top5_ctx', lang)),
+    cards = html.Div([
+        kpi_grid([
+            kpi_card(t('k_rliq', lang), receita_liquida, '✅', None,      t('k_rliq_ctx', lang)),
+            kpi_card(t('k_f12m', lang), fat_12m,         '📆', delta_12m, t('k_f12m_ctx', lang)),
+            kpi_card(t('k_f6m', lang),  fat_6m,          '📊', delta_6m,  t('k_f6m_ctx', lang)),
+            kpi_card(t('k_f3m', lang),  fat_3m,          '📈', delta_3m,  t('k_f3m_ctx', lang)),
+            kpi_card(t('k_f1m', lang),  fat_1m,          '🗓️', delta_1m,  t('k_f1m_ctx', lang, mes=ultimo_mes or '—')),
+            kpi_card('MRR',             mrr,             '📅', None,      t('k_mrr_ctx', lang)),
+        ], className='kpi-grid kpi-grid--hero'),
+        kpi_grid([
+            kpi_card(t('k_clip', lang), clientes_periodo,   '🏢', None, t('k_clip_ctx', lang), value_fmt='int', compact=True),
+            kpi_card(t('k_clim', lang), clientes_ult_mes,   '👥', None, t('k_clim_ctx', lang, mes=ultimo_mes or '—'), value_fmt='int', compact=True),
+            kpi_card(t('k_tcli', lang), ticket_cliente_mes, '🎯', None, t('k_tcli_ctx', lang), compact=True),
+            kpi_card(t('k_top5', lang), ticket_top5,        '🏆', None, t('k_top5_ctx', lang), compact=True),
+        ], className='kpi-grid kpi-grid--mini'),
     ])
 
     insights = insight_panel(df, lang)
@@ -273,13 +242,13 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
                     hovertext=f'{t("g_pico", lang)}: R$ {rec/1e6:.1f}M',
                 )
     fig_monthly.update_layout(
-        title=t('g_mensal', lang),
         xaxis_title='', yaxis_title='R$',
         yaxis_tickformat=',.0f',
         # mm/aaaa no eixo e no hover — o padrão do Plotly mostra meses em inglês
         xaxis=dict(tickformat='%m/%Y', hoverformat='%m/%Y'),
-        legend=dict(orientation='h', y=1.1),
-        height=320,
+        legend=dict(orientation='h', y=1.08),
+        height=300,
+        margin=dict(t=26),
     )
 
     # ── YoY ──
@@ -301,7 +270,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
             hovertemplate=f'<b>{ano}</b> %{{customdata}}<br>R$ %{{y:,.0f}}<extra></extra>',
         ))
     fig_yoy.update_layout(
-        title=t('g_yoy', lang),
+        margin=dict(t=26),
         xaxis=dict(
             tickmode='array',
             tickvals=list(range(1, 13)),
@@ -310,8 +279,8 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         ),
         yaxis_title='R$',
         yaxis_tickformat=',.0f',
-        legend=dict(orientation='h', y=1.1),
-        height=320,
+        legend=dict(orientation='h', y=1.08),
+        height=280,
     )
 
     # ── Treemap ──
@@ -332,7 +301,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
             showscale=False,
         ),
     ))
-    fig_treemap.update_layout(title=t('g_tree', lang), height=400, margin=dict(t=40, l=0, r=0, b=0))
+    fig_treemap.update_layout(height=320, margin=dict(t=10, l=0, r=0, b=0))
 
     # ── Concentração com alerta de risco ──
     client_rev = df.groupby('GrupoEcon', observed=True)['Vlr.Total'].sum().sort_values(ascending=False).reset_index()
@@ -366,10 +335,10 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         hovertemplate='<b>%{label}</b><br>R$ %{value:,.0f}<br>%{percent}<extra></extra>',
     ))
     fig_conc.update_layout(
-        title=t('g_conc', lang, risco=risco_label),
         showlegend=True,
         legend=dict(orientation='v'),
-        height=400,
+        height=320,
+        margin=dict(t=10),
         annotations=[dict(
             text=f'<b>{top1_nome}</b><br>{top1_pct:.1f}%<br>Top 1',
             x=0.5, y=0.5, showarrow=False,
@@ -416,11 +385,11 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     mes_forte = saz_media.loc[saz_media['Vlr.Total'].idxmax(), 'mes_label']
     mes_fraco = saz_media.loc[saz_media['Vlr.Total'].idxmin(), 'mes_label']
     fig_heat.update_layout(
-        title=t('g_saz', lang, pico=mes_forte, vale=mes_fraco),
         xaxis_title='', yaxis_title='R$',
         yaxis_tickformat=',.0f',
         showlegend=False,
-        height=300,
+        height=230,
+        margin=dict(t=14),
     )
 
     # ── Acumulado ──
@@ -442,7 +411,7 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
                 hovertemplate=f'<b>{ano}</b> %{{customdata}}<br>{t("h_acum", lang)}: R$ %{{y:,.0f}}<extra></extra>',
             ))
     fig_cum.update_layout(
-        title=t('g_acum', lang),
+        margin=dict(t=26),
         xaxis=dict(
             tickmode='array',
             tickvals=list(range(1, 13)),
@@ -451,8 +420,8 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         ),
         yaxis_title='R$',
         yaxis_tickformat=',.0f',
-        legend=dict(orientation='h', y=1.1),
-        height=320,
+        legend=dict(orientation='h', y=1.08),
+        height=280,
     )
 
     # ── Tag de mês parcial no cabeçalho ──
@@ -475,11 +444,11 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
 
     headers = (
         t('ov_title', lang), t('ov_sub', lang),
-        t('c_mensal', lang), t('c_mensal_sub', lang),
+        t('c_mensal', lang), t('c_mensal_dyn', lang),
         t('c_yoy', lang), t('c_yoy_sub', lang),
         t('c_tree', lang), t('c_tree_sub', lang),
-        t('c_conc', lang), t('c_conc_sub', lang),
-        t('c_saz', lang), t('c_saz_sub', lang),
+        t('c_conc', lang), t('c_conc_dyn', lang, risco=risco_label),
+        t('c_saz', lang), t('c_saz_dyn', lang, pico=mes_forte, vale=mes_fraco),
         t('c_acum', lang), t('c_acum_sub', lang),
     )
     return (tag, cards, insights, fig_monthly, fig_yoy, fig_treemap, fig_conc,

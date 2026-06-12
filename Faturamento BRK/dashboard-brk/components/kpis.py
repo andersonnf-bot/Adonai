@@ -3,7 +3,8 @@ import numbers
 from components.theme import fmt_brl, fmt_pct, COLORS
 
 
-def kpi_card(label, value, icon, delta=None, context=None, value_fmt='brl'):
+def kpi_card(label, value, icon, delta=None, context=None, value_fmt='brl',
+             compact=False):
     # Converte para float nativo (resolve float32/float64 do numpy)
     try:
         value = float(value)
@@ -40,9 +41,9 @@ def kpi_card(label, value, icon, delta=None, context=None, value_fmt='brl'):
             html.Div(val_str, className='kpi-value'),
             html.Div(delta_el + ctx_el, className='kpi-footer'),
         ],
-        className='kpi-card',
+        className='kpi-card kpi-card--sm' if compact else 'kpi-card',
     )
 
 
-def kpi_grid(cards):
-    return html.Div(cards, className='kpi-grid')
+def kpi_grid(cards, className='kpi-grid'):
+    return html.Div(cards, className=className)

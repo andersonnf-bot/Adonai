@@ -57,6 +57,15 @@ Auditoria completa de código + inspeção visual página a página.
 - Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
 - Para reverter qualquer item: `git revert` do commit correspondente
 
+### Etapa 2 — Cockpit em todas as páginas + contexto nos espaços vazios (12/06)
+- Trilho lateral da Visão Executiva ganhou **Top 5 Clientes** e **Top 5 Serviços**
+  do período (com barras de proporção) — fim do vão abaixo dos insights
+- Sidebar ganhou **Resumo da Base**: período dos dados, receita líquida,
+  grupos econômicos e serviços — preenche o vão abaixo dos módulos
+- Headers compactos em linha única nas 4 páginas
+- Radar: KPIs em dois pesos (3 heróis de receita + 6 contadores compactos)
+- Densidade global: paddings/margens reduzidos em cards, KPIs e grids
+
 ### Etapa 2 — Visão Executiva vira Cockpit Executivo (12/06)
 - Header em linha única (título + subtítulo inline + tag de mês parcial)
 - KPIs em dois pesos: 6 heróis (Receita, 12M, 6M, Trimestre, Mês, MRR) +

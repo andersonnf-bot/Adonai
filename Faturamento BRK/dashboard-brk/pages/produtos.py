@@ -33,9 +33,12 @@ _CELL = {
 
 layout = html.Div([
     html.Div([
-        html.Div('Produtos & Serviços', id='p-title', className='page-title'),
-        html.Div('Análise completa do portfólio de serviços', id='p-sub', className='page-subtitle'),
-    ], className='page-header'),
+        html.Div([
+            html.Span('Produtos & Serviços', id='p-title', className='page-title'),
+            html.Span('Análise completa do portfólio de serviços',
+                      id='p-sub', className='page-subtitle-inline'),
+        ]),
+    ], className='page-header-compact'),
 
     html.Div([
         html.Div([

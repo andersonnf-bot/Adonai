@@ -438,6 +438,31 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     else:
         tag = ''
 
+    # ── Trilho lateral: insights + top 5 clientes e serviços do período ──
+    def _rail_top(titulo, df_rows, col_nome, col_val):
+        linhas = []
+        vmax = float(df_rows[col_val].max()) if len(df_rows) else 1.0
+        for _, rr in df_rows.head(5).iterrows():
+            v = float(rr[col_val])
+            linhas.append(html.Div([
+                html.Div([
+                    html.Span(str(rr[col_nome]).title(), className='rail-name',
+                              title=str(rr[col_nome])),
+                    html.Span(fmt_brl(v), className='rail-val'),
+                ], className='rail-row-top'),
+                html.Div(html.Div(className='rail-bar-fill',
+                                  style={'width': f'{v / vmax * 100:.1f}%'}),
+                         className='rail-bar'),
+            ], className='rail-row'))
+        return html.Div([html.Div(titulo, className='rail-title'), *linhas],
+                        className='chart-card rail-card')
+
+    rail = html.Div([
+        insights,
+        _rail_top(t('rail_topcli', lang), client_rev, 'GrupoEcon', 'Vlr.Total'),
+        _rail_top(t('rail_topsrv', lang), treemap_data, 'Descricao', 'Vlr.Total'),
+    ])
+
     tpl = plotly_template(tema)
     for f in (fig_monthly, fig_yoy, fig_treemap, fig_conc, fig_heat, fig_cum):
         f.update_layout(template=tpl)
@@ -451,5 +476,5 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
         t('c_saz', lang), t('c_saz_dyn', lang, pico=mes_forte, vale=mes_fraco),
         t('c_acum', lang), t('c_acum_sub', lang),
     )
-    return (tag, cards, insights, fig_monthly, fig_yoy, fig_treemap, fig_conc,
+    return (tag, cards, rail, fig_monthly, fig_yoy, fig_treemap, fig_conc,
             fig_heat, fig_cum, *headers)

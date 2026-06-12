@@ -757,14 +757,11 @@ td.CalendarDay {
 .ov-main .chart-card-header { margin-bottom: 8px; }
 .ov-main .grid-2 { gap: 14px; }
 
-/* trilho de insights: lista vertical compacta e fixa ao rolar */
+/* trilho de insights: lista vertical compacta
+   (sem sticky: o trilho agora tem conteúdo na altura toda da página) */
 .insight-rail .insight-panel {
-  position: sticky;
-  top: 118px;
-  margin-bottom: 0;
+  margin-bottom: 14px;
   padding: 12px 14px;
-  max-height: calc(100vh - 140px);
-  overflow-y: auto;
 }
 
 .insight-rail .insight-grid {
@@ -814,3 +811,74 @@ td.CalendarDay {
   .ov-cockpit { grid-template-columns: 1fr; }
   .insight-rail .insight-panel { position: static; max-height: none; }
 }
+
+/* ── Trilho: cards de Top 5 (clientes / serviços) ── */
+.rail-card { padding: 12px 14px; margin-bottom: 14px; }
+
+.rail-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.rail-row { margin-bottom: 9px; }
+.rail-row:last-child { margin-bottom: 0; }
+
+.rail-row-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.rail-name {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-val { color: var(--text-secondary); font-weight: 600; white-space: nowrap; }
+
+.rail-bar {
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  margin-top: 3px;
+}
+
+.rail-bar-fill { height: 100%; background: var(--primary); border-radius: 2px; }
+
+/* ── Sidebar: resumo da base (preenche o vão abaixo dos módulos) ── */
+.sidebar-resumo {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: auto;
+}
+
+.sidebar-resumo-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 8px;
+}
+
+.sidebar-resumo-row { margin-bottom: 5px; line-height: 1.35; }
+.sidebar-resumo-row .val { color: var(--text); font-weight: 600; }
+
+/* ── Densidade global (estilo cockpit em todas as páginas) ── */
+.page-header { margin-bottom: 14px; }
+.chart-card { padding: 16px 18px; margin-bottom: 14px; }
+.chart-card-header { margin-bottom: 10px; }
+.kpi-grid { gap: 12px; margin-bottom: 14px; }
+.kpi-card { padding: 16px; }
+.kpi-value { font-size: 23px; }
+.insight-panel { margin-bottom: 14px; padding: 14px 16px; }
+.grid-2 { gap: 14px; }

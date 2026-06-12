@@ -16,6 +16,12 @@ T = {
     'nav_produtos':  ('Produtos & Serviços', 'Products & Services', 'Productos y Servicios'),
     'nav_tend':      ('Tendências', 'Trends', 'Tendencias'),
 
+    'nav_resumo':  ('RESUMO DA BASE', 'DATA SUMMARY', 'RESUMEN DE DATOS'),
+    'nav_rec':     ('receita líquida', 'net revenue', 'ingresos netos'),
+    'nav_grupos':  ('grupos econômicos', 'economic groups', 'grupos económicos'),
+    'rail_topcli': ('🏆 Top 5 Clientes do Período', '🏆 Top 5 Customers', '🏆 Top 5 Clientes del Período'),
+    'rail_topsrv': ('📦 Top 5 Serviços do Período', '📦 Top 5 Services', '📦 Top 5 Servicios del Período'),
+
     # ── Barra de filtros ──
     'f_filtros':  ('FILTROS:', 'FILTERS:', 'FILTROS:'),
     'f_periodo':  ('PERÍODO', 'PERIOD', 'PERÍODO'),
@@ -161,7 +167,7 @@ T = {
     'cl_title':   ('Análise de Clientes', 'Customer Analysis', 'Análisis de Clientes'),
     'cl_sub':     ('Todos os clientes · faturamento completo por período', 'All customers · full revenue by period', 'Todos los clientes · facturación completa por período'),
     'cl_card':    ('Receita Total por Cliente', 'Total Revenue by Customer', 'Ingresos Totales por Cliente'),
-    'cl_card_sub':('Ranking completo · ordenável · paginado', 'Full ranking · sortable · paginated', 'Ranking completo · ordenable · paginado'),
+    'cl_card_sub':('Ranking completo · ordenável · rolagem contínua', 'Full ranking · sortable · continuous scroll', 'Ranking completo · ordenable · desplazamiento continuo'),
     'cl_clique':  ('👆 Clique em um cliente na tabela para ver análise detalhada.', '👆 Click a customer in the table for detailed analysis.', '👆 Haga clic en un cliente para ver el análisis detallado.'),
     'cl_sem':     ('Sem dados para este cliente no período.', 'No data for this customer in the period.', 'Sin datos para este cliente en el período.'),
 

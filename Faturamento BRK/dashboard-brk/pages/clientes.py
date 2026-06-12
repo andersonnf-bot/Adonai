@@ -65,9 +65,12 @@ def _status_conditionals(pal):
 
 layout = html.Div([
     html.Div([
-        html.Div('Análise de Clientes', id='cl-title', className='page-title'),
-        html.Div('Todos os clientes · faturamento completo por período', id='cl-sub', className='page-subtitle'),
-    ], className='page-header'),
+        html.Div([
+            html.Span('Análise de Clientes', id='cl-title', className='page-title'),
+            html.Span('Todos os clientes · faturamento completo por período',
+                      id='cl-sub', className='page-subtitle-inline'),
+        ]),
+    ], className='page-header-compact'),
 
     html.Div([
         html.Div([

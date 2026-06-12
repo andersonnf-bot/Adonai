@@ -62,13 +62,13 @@ def _tend_conditionals(pal):
     ]
 
 layout = html.Div([
-    # ── Cabeçalho ──
+    # ── Cabeçalho compacto ──
     html.Div([
         html.Div([
-            html.Div('Radar Gerencial de Clientes', id='t-title', className='page-title'),
-            html.Div(
+            html.Span('Radar Gerencial de Clientes', id='t-title', className='page-title'),
+            html.Span(
                 'Crescimento · Retenção · Risco · Oportunidade · Health Score',
-                id='t-sub', className='page-subtitle'
+                id='t-sub', className='page-subtitle-inline'
             ),
         ]),
         html.Div([
@@ -80,7 +80,7 @@ layout = html.Div([
                 style={'fontSize': '11px', 'color': COLORS['text_muted']}
             ),
         ], style={'display': 'flex', 'alignItems': 'center', 'gap': '6px'}),
-    ], className='page-header', style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'flex-start'}),
+    ], className='page-header-compact'),
 
     # ── KPIs ──
     html.Div(id='tend-kpis', style={'marginBottom': '20px'}),
@@ -353,16 +353,20 @@ def update_radar(start_date, end_date, anos, cliente, produto, valor_min, valor_
     ].sum())
     upsell_n = (agg['Upsell'] == sim_up).sum()
 
-    kpis = kpi_grid([
-        kpi_card(t('tk_cresc', lang),   crescendo,  '🟢', None, t('tk_cresc_ctx', lang),   value_fmt='int'),
-        kpi_card(t('tk_estavel', lang), estavel,    '🟡', None, t('tk_estavel_ctx', lang), value_fmt='int'),
-        kpi_card(t('tk_queda', lang),   queda,      '🔴', None, t('tk_queda_ctx', lang),   value_fmt='int'),
-        kpi_card(t('tk_inativos', lang), inativo,   '⚫', None, t('tk_inativos_ctx', lang, d=TH_INATIVO_DIAS), value_fmt='int'),
-        kpi_card(t('tk_novos', lang),   novo,       '🆕', None, t('tk_novos_ctx', lang),   value_fmt='int'),
-        kpi_card(t('tk_recup', lang),   recuperado, '🔄', None, t('tk_recup_ctx', lang),   value_fmt='int'),
-        kpi_card(t('tk_exp', lang),     rec_expansao, '💰', None, t('tk_exp_ctx', lang)),
-        kpi_card(t('tk_risco', lang),   rec_risco,    '⚠️', None, t('tk_risco_ctx', lang)),
-        kpi_card(t('tk_upsell', lang),  upsell_n,     '📈', None, t('tk_upsell_ctx', lang), value_fmt='int'),
+    kpis = html.Div([
+        kpi_grid([
+            kpi_card(t('tk_exp', lang),    rec_expansao, '💰', None, t('tk_exp_ctx', lang)),
+            kpi_card(t('tk_risco', lang),  rec_risco,    '⚠️', None, t('tk_risco_ctx', lang)),
+            kpi_card(t('tk_upsell', lang), upsell_n,     '📈', None, t('tk_upsell_ctx', lang), value_fmt='int'),
+        ], className='kpi-grid kpi-grid--hero'),
+        kpi_grid([
+            kpi_card(t('tk_cresc', lang),   crescendo,  '🟢', None, t('tk_cresc_ctx', lang),   value_fmt='int', compact=True),
+            kpi_card(t('tk_estavel', lang), estavel,    '🟡', None, t('tk_estavel_ctx', lang), value_fmt='int', compact=True),
+            kpi_card(t('tk_queda', lang),   queda,      '🔴', None, t('tk_queda_ctx', lang),   value_fmt='int', compact=True),
+            kpi_card(t('tk_inativos', lang), inativo,   '⚫', None, t('tk_inativos_ctx', lang, d=TH_INATIVO_DIAS), value_fmt='int', compact=True),
+            kpi_card(t('tk_novos', lang),   novo,       '🆕', None, t('tk_novos_ctx', lang),   value_fmt='int', compact=True),
+            kpi_card(t('tk_recup', lang),   recuperado, '🔄', None, t('tk_recup_ctx', lang),   value_fmt='int', compact=True),
+        ], className='kpi-grid kpi-grid--mini'),
     ])
 
     # ────────────── INSIGHTS ──────────────

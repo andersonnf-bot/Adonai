@@ -57,6 +57,17 @@ Auditoria completa de código + inspeção visual página a página.
 - Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
 - Para reverter qualquer item: `git revert` do commit correspondente
 
+### Etapa 2 — Tabela de Clientes enquadrada + affordance de clique (12/06)
+- **Toda a tabela cabe na tela** (fim da rolagem horizontal): larguras
+  percentuais por coluna (`_COL_WIDTHS`) + `table-layout: fixed` no CSS.
+  ⚠️ Forçar isso via prop `css=` do DataTable infla a tabela para 800000px
+  com virtualization — a regra tem que viver no style.css (`#clientes-table`)
+- Cabeçalho quebra em 2 linhas quando preciso; células mais densas (6px 8px);
+  nome completo do cliente em tooltip quando a coluna trunca
+- **Clique mais óbvio**: cursor de mão sobre a tabela, linha inteira com
+  realce laranja no hover, pílula "👆 Clique numa linha para detalhar" no
+  cabeçalho do card e célula clicada destacada em laranja
+
 ### Etapa 2 — Cockpit em todas as páginas + contexto nos espaços vazios (12/06)
 - Trilho lateral da Visão Executiva ganhou **Top 5 Clientes** e **Top 5 Serviços**
   do período (com barras de proporção) — fim do vão abaixo dos insights

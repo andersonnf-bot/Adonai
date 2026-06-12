@@ -12,10 +12,25 @@ from components.i18n import t
 
 dash.register_page(__name__, path='/clientes', name='Clientes', order=1)
 
+# larguras percentuais por coluna: a tabela ocupa 100% do card e todas as
+# colunas cabem na tela sem rolagem horizontal (soma = 100)
+_COL_WIDTHS = {
+    '#': '3.5%', 'Cliente': '16.5%',
+    'Receita Total': '9%', '% da Carteira': '6%',
+    'Último Mês': '8.5%', 'Var. M/M': '6%',
+    'Média 3M': '8.5%', 'Var. 3M': '6%',
+    'Média 6M': '8.5%', 'Var. 6M': '6%',
+    'Última NF': '8%', 'Dias sem NF': '5%', 'Status': '8%',
+}
+
 _TABLE_STYLE = {
     # rolagem contínua com cabeçalho fixo (sem paginação)
-    'style_table': {'overflowX': 'auto', 'borderRadius': '8px',
+    'style_table': {'overflowX': 'auto', 'width': '100%', 'borderRadius': '8px',
                     'height': '640px', 'overflowY': 'auto'},
+    'style_cell_conditional': [
+        {'if': {'column_id': col}, 'width': w, 'minWidth': w, 'maxWidth': w}
+        for col, w in _COL_WIDTHS.items()
+    ],
     'style_header': {
         'backgroundColor': COLORS['surface2'],
         'color': COLORS['text_secondary'],
@@ -50,6 +65,10 @@ _TABLE_STYLE = {
 def _status_conditionals(pal):
     cond = [
         {'if': {'row_index': 'odd'}, 'backgroundColor': pal['surface2']},
+        # célula clicada: destaque laranja (abre o detalhe do cliente abaixo)
+        {'if': {'state': 'active'},
+         'backgroundColor': 'rgba(255,101,0,0.12)',
+         'border': f'1px solid {pal["primary"]}'},
         {'if': {'filter_query': '{Status} contains "🚀"'}, 'color': pal['success']},
         {'if': {'filter_query': '{Status} contains "🔴"'}, 'color': '#FF8080'},
         {'if': {'filter_query': '{Status} contains "⚫"'}, 'color': pal['text_muted']},
@@ -76,7 +95,12 @@ layout = html.Div([
         html.Div([
             html.Div([
                 html.Div('Receita Total por Cliente', id='cl-c1t', className='chart-title'),
-                html.Div('Ranking completo · ordenável · paginado', id='cl-c1s', className='chart-subtitle'),
+                html.Div([
+                    html.Span('Ranking completo · ordenável · paginado',
+                              id='cl-c1s', className='chart-subtitle'),
+                    html.Span('👆 Clique numa linha para detalhar',
+                              id='cl-hint', className='table-hint-pill'),
+                ], style={'display': 'flex', 'alignItems': 'center', 'gap': '10px'}),
             ], className='chart-card-header'),
             dash_table.DataTable(
                 id='clientes-table',
@@ -91,6 +115,8 @@ layout = html.Div([
                 filter_options={'case': 'insensitive'},
                 tooltip_delay=0,
                 tooltip_duration=None,
+                # NUNCA forçar table-layout/width via css= aqui: com
+                # virtualization a tabela interna infla para 800000px
                 **_TABLE_STYLE,
             ),
         ], className='chart-card'),
@@ -117,11 +143,13 @@ def _compute_status(row, now, lang='pt'):
 @callback(
     Output('clientes-table', 'data'),
     Output('clientes-table', 'columns'),
+    Output('clientes-table', 'tooltip_data'),
     Output('clientes-table', 'style_header'),
     Output('clientes-table', 'style_cell'),
     Output('clientes-table', 'style_data_conditional'),
     Output('cl-title', 'children'), Output('cl-sub', 'children'),
     Output('cl-c1t', 'children'), Output('cl-c1s', 'children'),
+    Output('cl-hint', 'children'),
     Input('filter-date', 'start_date'),
     Input('filter-date', 'end_date'),
     Input('filter-ano', 'value'),
@@ -138,17 +166,20 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
     lang = lang or 'pt'
     pal  = get_palette(tema)
     ts   = table_styles(tema)
-    # minWidth estabiliza as colunas durante a rolagem virtualizada
-    extras = (ts['style_header'],
-              {**ts['style_cell'], 'minWidth': '105px'},
+    # cabeçalho quebra em 2 linhas quando preciso; células densas — tudo
+    # para a tabela inteira caber na tela sem rolagem horizontal
+    extras = ({**ts['style_header'], 'whiteSpace': 'normal', 'height': 'auto',
+               'padding': '8px 8px'},
+              {**ts['style_cell'], 'padding': '6px 8px'},
               _status_conditionals(pal),
               t('cl_title', lang), t('cl_sub', lang),
-              t('cl_card', lang), t('cl_card_sub', lang))
+              t('cl_card', lang), t('cl_card_sub', lang),
+              t('cl_hint_click', lang))
     df_all = get_liquid()
     df = apply_filters(df_all, start_date, end_date, anos, cliente, produto, valor_min, valor_max)
 
     if df.empty:
-        return [], [], *extras
+        return [], [], [], *extras
 
     now = df['Emissao'].max()
 
@@ -243,7 +274,11 @@ def update_table(start_date, end_date, anos, cliente, produto, valor_min, valor_
         {'name': t('col_status', lang), 'id': 'Status', 'type': 'text'},
     ] if records else []
 
-    return records, columns, *extras
+    # nome completo do cliente no hover (a coluna trunca com ellipsis)
+    tooltips = [{'Cliente': {'value': rec['Cliente'], 'type': 'text'}}
+                for rec in records]
+
+    return records, columns, tooltips, *extras
 
 
 @callback(

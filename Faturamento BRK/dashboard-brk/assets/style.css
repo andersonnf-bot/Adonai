@@ -882,3 +882,32 @@ td.CalendarDay {
 .kpi-value { font-size: 23px; }
 .insight-panel { margin-bottom: 14px; padding: 14px 16px; }
 .grid-2 { gap: 14px; }
+
+/* ── Tabela de clientes: affordance de clique ──
+   linhas são clicáveis (abrem o detalhe do cliente) — cursor de mão
+   e realce laranja da linha inteira no hover deixam isso visível */
+#clientes-table .dash-cell { cursor: pointer; }
+#clientes-table tr:hover .dash-cell {
+  background: rgba(255, 101, 0, 0.09) !important;
+}
+
+.table-hint-pill {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(255, 101, 0, 0.10);
+  border: 1px solid rgba(255, 101, 0, 0.35);
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* enquadramento: a tabela ocupa exatamente a largura do card e as colunas
+   seguem as larguras percentuais (_COL_WIDTHS em clientes.py).
+   Forçar isso via prop css= do DataTable infla a tabela p/ 800000px com
+   virtualization — tem que ser aqui no CSS, escopado ao container */
+#clientes-table .dash-fixed-content { width: 100% !important; }
+#clientes-table table.cell-table {
+  table-layout: fixed !important;
+  width: 100% !important;
+}

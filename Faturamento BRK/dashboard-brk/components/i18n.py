@@ -169,6 +169,7 @@ T = {
     'cl_card':    ('Receita Total por Cliente', 'Total Revenue by Customer', 'Ingresos Totales por Cliente'),
     'cl_card_sub':('Ranking completo · ordenável · rolagem contínua', 'Full ranking · sortable · continuous scroll', 'Ranking completo · ordenable · desplazamiento continuo'),
     'cl_clique':  ('👆 Clique em um cliente na tabela para ver análise detalhada.', '👆 Click a customer in the table for detailed analysis.', '👆 Haga clic en un cliente para ver el análisis detallado.'),
+    'cl_hint_click': ('👆 Clique numa linha para detalhar', '👆 Click a row for details', '👆 Haga clic en una fila para detallar'),
     'cl_sem':     ('Sem dados para este cliente no período.', 'No data for this customer in the period.', 'Sin datos para este cliente en el período.'),
 
     'col_cliente':  ('Cliente', 'Customer', 'Cliente'),

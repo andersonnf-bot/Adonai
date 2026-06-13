@@ -162,15 +162,17 @@ def build_sidebar_nav(pathname='/', lang='pt'):
 
 
 def sidebar_shell():
-    """Estrutura ESTÁTICA da sidebar: dois containers dinâmicos (nav e resumo)
-    intercalados com os blocos estáticos (preferências e rodapé). Definida no
-    layout uma vez; os callbacks só repintam os containers internos."""
+    """Estrutura ESTÁTICA da sidebar: módulos no topo; no rodapé, agrupados, o
+    resumo da base + as preferências (tema/idioma) + a identidade. Preferências
+    perto do rodapé é o padrão de apps com sidebar (Linear/Notion/Slack) — não
+    se misturam com a navegação. Os containers dinâmicos (nav e resumo) são
+    repintados por callbacks; preferências e rodapé são estáticos."""
     return html.Div(
         id='sidebar',
         children=[
             html.Div(id='sidebar-nav-container'),
-            sidebar_prefs(),
             html.Div(id='sidebar-resumo-container'),
+            sidebar_prefs(),
             sidebar_footer(),
         ],
     )

@@ -57,6 +57,14 @@ Auditoria completa de código + inspeção visual página a página.
 - Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
 - Para reverter qualquer item: `git revert` do commit correspondente
 
+### Etapa 2 — Preferências reposicionadas para o rodapé + ícones menores (13/06)
+- Tema/idioma desceram para junto da identidade no rodapé (padrão de apps com
+  sidebar: Linear/Notion/Slack — preferências não se misturam à navegação).
+  Ordem na sidebar: módulos (topo) → Resumo da Base → preferências → rodapé;
+  os módulos ganharam respiro (antes as prefs ficavam coladas neles)
+- Ícones reduzidos: bandeiras 24×17 → 20×14, tema 19×19 → 16×16
+- `.sidebar-prefs` passou a usar `border-top` (separa do Resumo)
+
 ### Etapa 2 — Union Jack + tema em ícones sol/lua (13/06)
 - Bandeira do inglês trocada de Inglaterra (cruz de São Jorge) para **Reino
   Unido / Union Jack** (padrão mundial), construída com clip de contraordem

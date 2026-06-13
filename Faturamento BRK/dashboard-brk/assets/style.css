@@ -171,11 +171,11 @@ html, body {
 
 /* ── Sidebar: preferências (tema + idioma) logo abaixo dos módulos ── */
 .sidebar-prefs {
-  padding: 4px 12px 14px;
+  padding: 12px 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
 }
 
 /* tema (sol/lua) e idioma (bandeiras): ícones SVG clicáveis. Emoji de bandeira
@@ -212,8 +212,8 @@ html, body {
 /* bandeira: retangular, com contorno fino para a de fundo branco (Reino Unido)
    não sumir no tema claro */
 .pref-flag-img {
-  width: 24px;
-  height: 17px;
+  width: 20px;
+  height: 14px;
   border-radius: 3px;
   display: block;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
@@ -221,8 +221,8 @@ html, body {
 
 /* ícone de tema: quadrado, sem contorno (glifo colorido sobre transparente) */
 .pref-theme-img {
-  width: 19px;
-  height: 19px;
+  width: 16px;
+  height: 16px;
   display: block;
 }
 

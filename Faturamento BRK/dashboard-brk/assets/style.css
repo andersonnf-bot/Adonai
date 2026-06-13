@@ -163,9 +163,9 @@ html, body {
 }
 
 .sidebar-footer {
-  padding: 14px 20px;
+  padding: 11px 20px;
   border-top: 1px solid var(--border);
-  font-size: 11px;
+  font-size: 9.5px;
   color: var(--text-muted);
 }
 
@@ -212,17 +212,17 @@ html, body {
 /* bandeira: retangular, com contorno fino para a de fundo branco (Reino Unido)
    não sumir no tema claro */
 .pref-flag-img {
-  width: 20px;
-  height: 14px;
-  border-radius: 3px;
+  width: 17px;
+  height: 12px;
+  border-radius: 2px;
   display: block;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
 
 /* ícone de tema: quadrado, sem contorno (glifo colorido sobre transparente) */
 .pref-theme-img {
-  width: 16px;
-  height: 16px;
+  width: 13px;
+  height: 13px;
   display: block;
 }
 
@@ -230,17 +230,17 @@ html, body {
 #sidebar-resumo-container { margin-top: auto; }
 
 /* ── Sidebar: rodapé de controle (data de atualização + responsável) ── */
-.sidebar-foot-row { margin-bottom: 6px; }
+.sidebar-foot-row { margin-bottom: 5px; }
 .foot-lbl { color: var(--text-muted); }
 .foot-val { color: var(--text-secondary); font-weight: 600; }
 .sidebar-foot-name {
   color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 11px;
+  font-weight: 500;
+  font-size: 9.5px;
 }
 .sidebar-foot-role {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: 8.5px;
   margin-top: 1px;
 }
 

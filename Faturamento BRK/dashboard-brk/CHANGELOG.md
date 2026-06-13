@@ -57,6 +57,10 @@ Auditoria completa de código + inspeção visual página a página.
 - Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
 - Para reverter qualquer item: `git revert` do commit correspondente
 
+### Etapa 2 — Rodapé e ícones ainda mais discretos (13/06)
+- Rodapé reduzido: data/nome 11→9,5px, cargo 10→8,5px, nome com peso 500
+- Ícones menores de novo: bandeiras 20×14 → 17×12, tema 16×16 → 13×13
+
 ### Etapa 2 — Preferências reposicionadas para o rodapé + ícones menores (13/06)
 - Tema/idioma desceram para junto da identidade no rodapé (padrão de apps com
   sidebar: Linear/Notion/Slack — preferências não se misturam à navegação).

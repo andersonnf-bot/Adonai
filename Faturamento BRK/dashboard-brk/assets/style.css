@@ -116,8 +116,7 @@ html, body {
 }
 
 .sidebar-nav {
-  padding: 16px 12px;
-  flex: 1;
+  padding: 16px 12px 8px;
 }
 
 .sidebar-section-label {
@@ -164,10 +163,37 @@ html, body {
 }
 
 .sidebar-footer {
-  padding: 16px 20px;
+  padding: 14px 20px;
   border-top: 1px solid var(--border);
   font-size: 11px;
   color: var(--text-muted);
+}
+
+/* ── Sidebar: preferências (tema + idioma) logo abaixo dos módulos ── */
+.sidebar-prefs {
+  padding: 4px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* resumo + rodapé empurrados para a base (a nav não usa mais flex:1) */
+#sidebar-resumo-container { margin-top: auto; }
+
+/* ── Sidebar: rodapé de controle (data de atualização + responsável) ── */
+.sidebar-foot-row { margin-bottom: 6px; }
+.foot-lbl { color: var(--text-muted); }
+.foot-val { color: var(--text-secondary); font-weight: 600; }
+.sidebar-foot-name {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 11px;
+}
+.sidebar-foot-role {
+  color: var(--text-muted);
+  font-size: 10px;
+  margin-top: 1px;
 }
 
 /* ── MAIN CONTENT ── */
@@ -900,11 +926,24 @@ td.CalendarDay {
   font-size: 11px;
   font-weight: 600;
   color: var(--primary);
-  background: rgba(255, 101, 0, 0.10);
-  border: 1px solid rgba(255, 101, 0, 0.35);
+  background: rgba(255, 101, 0, 0.14);
+  border: 1px solid rgba(255, 101, 0, 0.45);
   padding: 3px 10px;
   border-radius: 999px;
   white-space: nowrap;
+  /* glow pulsante lento e discreto — chama o olhar sem distrair; coeso
+     com a cor primária e idêntico nos 3 módulos (mesma classe) */
+  animation: hint-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes hint-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 101, 0, 0); }
+  50%      { box-shadow: 0 0 0 4px rgba(255, 101, 0, 0.14); }
+}
+
+/* acessibilidade: sem animação para quem prefere movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  .table-hint-pill { animation: none; }
 }
 
 /* enquadramento: a tabela ocupa exatamente a largura do card e as colunas

@@ -57,6 +57,22 @@ Auditoria completa de código + inspeção visual página a página.
 - Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
 - Para reverter qualquer item: `git revert` do commit correspondente
 
+### Etapa 2 — Preferências na sidebar + dica de clique reforçada + rodapé de controle (13/06)
+- **Tema e idioma saíram da barra de filtros para a sidebar** (abaixo dos
+  módulos): são preferências, não filtros. A barra superior fica só com o que
+  filtra dados e, em telas ~1920px, colapsa de 2 linhas para 1 (104→59px) —
+  os gráficos sobem ~45px
+- Refatoração: sidebar virou shell estático com 2 containers dinâmicos (nav e
+  resumo) + 2 blocos estáticos (preferências e rodapé). Os selects tema/idioma
+  ficam fora dos callbacks de navegação — recriá-los dentro da navbar criaria
+  loop e perderia o estado (são Input de muitos callbacks)
+- **Dica "clique para detalhar" mais visível**: glow laranja pulsante e lento
+  na pílula (animação `hint-pulse`, 2,4s), idêntico nos 3 módulos; respeita
+  `prefers-reduced-motion`
+- **Rodapé de controle na sidebar**: "🔄 Atualizado em DD/MM/AAAA" (mtime do
+  parquet, via `get_data_mtime` no loader) + "Adonai · Anderson Ferreira ·
+  Gerente de Área"
+
 ### Etapa 2 — Mesma dinâmica em Produtos e Radar (12/06)
 - Tabelas de Produtos & Serviços (10 colunas) e Central de Gestão do Radar
   (15 colunas) enquadradas na tela: larguras percentuais + table-layout fixed

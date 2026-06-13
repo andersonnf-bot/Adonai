@@ -335,6 +335,16 @@ def get_liquid():
     return df
 
 
+def get_data_mtime():
+    """Data da última atualização da base = mtime do arquivo de dados usado
+    (regenerado pelo atualizar_dados.bat). Para o rodapé de controle."""
+    import datetime as _dt
+    try:
+        return _dt.datetime.fromtimestamp(_find_data_file().stat().st_mtime)
+    except Exception:
+        return None
+
+
 def _parse_valor(v):
     """Converte string formatada em pt-BR (ex: '1.500.000') para float."""
     if v is None or str(v).strip() == '':

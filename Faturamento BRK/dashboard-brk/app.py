@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 from flask import request, Response
 
 from components.theme import COLORS
-from components.navbar import build_navbar
+from components.navbar import sidebar_shell, build_sidebar_nav, _resumo_base
 from components.filters import build_filter_bar
 from components.i18n import t
 
@@ -49,7 +49,7 @@ app.layout = html.Div(
     [
         dcc.Location(id='url', refresh=False),
         html.Div(id='theme-dummy', style={'display': 'none'}),
-        html.Div(id='sidebar-container'),
+        sidebar_shell(),
         html.Div(
             [
                 build_filter_bar(),
@@ -67,13 +67,24 @@ app.layout = html.Div(
 )
 
 
+# Sidebar dividida em dois containers dinâmicos: nav (logo + módulos) e resumo.
+# Os blocos estáticos (preferências tema/idioma e rodapé) ficam fora dos
+# callbacks — assim os selects nunca são recriados (evita loop e perda de estado).
 @callback(
-    Output('sidebar-container', 'children'),
+    Output('sidebar-nav-container', 'children'),
     Input('url', 'pathname'),
     Input('lang-select', 'value'),
 )
-def update_sidebar(pathname, lang):
-    return build_navbar(pathname or '/', lang or 'pt')
+def update_sidebar_nav(pathname, lang):
+    return build_sidebar_nav(pathname or '/', lang or 'pt')
+
+
+@callback(
+    Output('sidebar-resumo-container', 'children'),
+    Input('lang-select', 'value'),
+)
+def update_sidebar_resumo(lang):
+    return _resumo_base(lang or 'pt')
 
 
 # ── Aplica o tema no shell (CSS troca as variáveis via data-theme) ──

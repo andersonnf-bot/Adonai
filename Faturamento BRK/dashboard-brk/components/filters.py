@@ -100,31 +100,7 @@ def build_filter_bar():
                     ),
                 ], style={'display': 'flex', 'alignItems': 'center', 'gap': '2px'}),
             ], className='filter-group'),
-
-            # ── Preferências: tema e idioma (memorizados pelo navegador) ──
-            html.Div([
-                dcc.Dropdown(
-                    id='theme-select',
-                    options=[
-                        {'label': '☀️ Light', 'value': 'light'},
-                        {'label': '🌙 Dark', 'value': 'dark'},
-                    ],
-                    value='light', clearable=False, searchable=False,
-                    persistence=True, persistence_type='local',
-                    style={'minWidth': '110px', **_DROP},
-                ),
-                dcc.Dropdown(
-                    id='lang-select',
-                    options=[
-                        {'label': '🇧🇷 PT', 'value': 'pt'},
-                        {'label': '🇺🇸 EN', 'value': 'en'},
-                        {'label': '🇪🇸 ES', 'value': 'es'},
-                    ],
-                    value='pt', clearable=False, searchable=False,
-                    persistence=True, persistence_type='local',
-                    style={'minWidth': '92px', **_DROP},
-                ),
-            ], className='filter-group pref-group',
-               style={'marginLeft': 'auto'}),
+            # Tema e idioma foram para a sidebar (são preferências, não filtros);
+            # a barra superior fica só com o que filtra dados.
         ],
     )

@@ -1,8 +1,16 @@
-from dash import html, dcc
+from dash import html, dcc, get_asset_url
 
 from components.i18n import t
 from components.theme import fmt_brl
 from data.loader import get_liquid, get_data_mtime
+
+
+# idioma → (arquivo da bandeira, rótulo curto, nome p/ tooltip)
+_LANGS = [
+    ('pt', 'br.svg', 'PT', 'Português'),
+    ('en', 'en.svg', 'EN', 'English'),
+    ('es', 'es.svg', 'Español'.upper()[:2], 'Español'),
+]
 
 
 PAGES = [
@@ -50,16 +58,28 @@ def sidebar_prefs():
                 persistence=True, persistence_type='local',
                 style={'fontSize': '12px'},
             ),
+            # Idioma: bandeirinhas clicáveis (SVG renderiza em qualquer SO —
+            # emoji de bandeira não aparece no Windows, vira "BR"/"EN"). O
+            # dropdown fica oculto só para guardar o valor e a persistência;
+            # os callbacks de página seguem lendo Input('lang-select','value').
+            html.Div(
+                [
+                    html.Button(
+                        html.Img(src=get_asset_url(f'flags/{flag}'), alt=label,
+                                 className='lang-flag-img'),
+                        id=f'lang-{code}', n_clicks=0, title=nome,
+                        className='lang-flag', **{'aria-label': nome},
+                    )
+                    for code, flag, label, nome in _LANGS
+                ],
+                className='lang-flags',
+            ),
             dcc.Dropdown(
                 id='lang-select',
-                options=[
-                    {'label': '🇧🇷 PT', 'value': 'pt'},
-                    {'label': '🇺🇸 EN', 'value': 'en'},
-                    {'label': '🇪🇸 ES', 'value': 'es'},
-                ],
+                options=[{'label': c, 'value': c} for c, *_ in _LANGS],
                 value='pt', clearable=False, searchable=False,
                 persistence=True, persistence_type='local',
-                style={'fontSize': '12px'},
+                style={'display': 'none'},
             ),
         ],
         className='sidebar-prefs',

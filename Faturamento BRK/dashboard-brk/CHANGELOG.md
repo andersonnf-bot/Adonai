@@ -57,6 +57,17 @@ Auditoria completa de código + inspeção visual página a página.
 - Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
 - Para reverter qualquer item: `git revert` do commit correspondente
 
+### Etapa 2 — Bandeiras reais no seletor de idioma (13/06)
+- Emoji de bandeira (🇧🇷🇺🇸🇪🇸) NÃO renderiza no Windows (vira "BR"/"US"/"ES") —
+  trocado por SVGs reais em `assets/flags/` (br, en, es)
+- Idioma vira 3 bandeirinhas clicáveis: Brasil (PT), **Inglaterra** (EN, antes
+  era EUA) e Espanha (ES). Inativas esmaecidas, ativa com anel laranja; sutil
+- O `dcc.Dropdown#lang-select` fica oculto só guardando valor + persistência;
+  clientside callbacks traduzem o clique→valor e valor→destaque. Toda a
+  engrenagem de i18n (Input('lang-select','value')) segue intacta
+- Contorno fino nas bandeiras p/ a da Inglaterra (fundo branco) não sumir no
+  tema claro
+
 ### Etapa 2 — Preferências na sidebar + dica de clique reforçada + rodapé de controle (13/06)
 - **Tema e idioma saíram da barra de filtros para a sidebar** (abaixo dos
   módulos): são preferências, não filtros. A barra superior fica só com o que

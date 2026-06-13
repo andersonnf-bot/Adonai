@@ -101,6 +101,45 @@ app.clientside_callback(
 )
 
 
+# ── Idioma por bandeirinhas: o clique escreve no dropdown oculto lang-select
+#    (que mantém valor + persistência); a página inteira lê esse valor ──
+app.clientside_callback(
+    """
+    function(nPt, nEn, nEs, atual) {
+        var ctx = dash_clientside.callback_context;
+        if (!ctx.triggered.length) return dash_clientside.no_update;
+        var id = ctx.triggered[0].prop_id.split('.')[0];
+        if (id === 'lang-pt') return 'pt';
+        if (id === 'lang-en') return 'en';
+        if (id === 'lang-es') return 'es';
+        return dash_clientside.no_update;
+    }
+    """,
+    Output('lang-select', 'value'),
+    Input('lang-pt', 'n_clicks'),
+    Input('lang-en', 'n_clicks'),
+    Input('lang-es', 'n_clicks'),
+    State('lang-select', 'value'),
+    prevent_initial_call=True,
+)
+
+
+# ── Realça a bandeira do idioma ativo (também no load, via valor persistido) ──
+app.clientside_callback(
+    """
+    function(lang) {
+        lang = lang || 'pt';
+        function cls(c) { return 'lang-flag' + (lang === c ? ' active' : ''); }
+        return [cls('pt'), cls('en'), cls('es')];
+    }
+    """,
+    Output('lang-pt', 'className'),
+    Output('lang-en', 'className'),
+    Output('lang-es', 'className'),
+    Input('lang-select', 'value'),
+)
+
+
 # ── Traduz rótulos e placeholders da barra de filtros ──
 @callback(
     Output('f-lbl-filtros', 'children'),

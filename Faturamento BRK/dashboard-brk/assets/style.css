@@ -178,6 +178,45 @@ html, body {
   border-bottom: 1px solid var(--border);
 }
 
+/* idioma: bandeirinhas clicáveis (SVG real — emoji de bandeira não renderiza
+   no Windows). Sutis: pequenas, esmaecidas; a ativa ganha nitidez + anel */
+.lang-flags {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.lang-flag {
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+  opacity: 0.45;
+  filter: grayscale(45%);
+  transition: opacity 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.lang-flag:hover { opacity: 0.85; transform: translateY(-1px); }
+
+.lang-flag.active {
+  opacity: 1;
+  filter: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(255, 101, 0, 0.18);
+}
+
+.lang-flag-img {
+  width: 24px;
+  height: 17px;
+  border-radius: 3px;
+  display: block;
+  /* contorno fino: dá borda à bandeira de fundo branco (Inglaterra) para ela
+     não sumir no tema claro */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
 /* resumo + rodapé empurrados para a base (a nav não usa mais flex:1) */
 #sidebar-resumo-container { margin-top: auto; }
 

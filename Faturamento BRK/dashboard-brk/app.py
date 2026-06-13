@@ -101,6 +101,42 @@ app.clientside_callback(
 )
 
 
+# ── Tema por ícones sol/lua: o clique escreve no dropdown oculto theme-select
+#    (que mantém valor + persistência) ──
+app.clientside_callback(
+    """
+    function(nLight, nDark, atual) {
+        var ctx = dash_clientside.callback_context;
+        if (!ctx.triggered.length) return dash_clientside.no_update;
+        var id = ctx.triggered[0].prop_id.split('.')[0];
+        if (id === 'theme-light') return 'light';
+        if (id === 'theme-dark')  return 'dark';
+        return dash_clientside.no_update;
+    }
+    """,
+    Output('theme-select', 'value'),
+    Input('theme-light', 'n_clicks'),
+    Input('theme-dark', 'n_clicks'),
+    State('theme-select', 'value'),
+    prevent_initial_call=True,
+)
+
+
+# ── Realça o ícone de tema ativo (também no load, via valor persistido) ──
+app.clientside_callback(
+    """
+    function(tema) {
+        tema = tema || 'light';
+        function cls(c) { return 'pref-icon' + (tema === c ? ' active' : ''); }
+        return [cls('light'), cls('dark')];
+    }
+    """,
+    Output('theme-light', 'className'),
+    Output('theme-dark', 'className'),
+    Input('theme-select', 'value'),
+)
+
+
 # ── Idioma por bandeirinhas: o clique escreve no dropdown oculto lang-select
 #    (que mantém valor + persistência); a página inteira lê esse valor ──
 app.clientside_callback(
@@ -129,7 +165,7 @@ app.clientside_callback(
     """
     function(lang) {
         lang = lang || 'pt';
-        function cls(c) { return 'lang-flag' + (lang === c ? ' active' : ''); }
+        function cls(c) { return 'pref-icon' + (lang === c ? ' active' : ''); }
         return [cls('pt'), cls('en'), cls('es')];
     }
     """,

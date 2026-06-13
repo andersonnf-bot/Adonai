@@ -57,6 +57,16 @@ Auditoria completa de código + inspeção visual página a página.
 - Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
 - Para reverter qualquer item: `git revert` do commit correspondente
 
+### Etapa 2 — Union Jack + tema em ícones sol/lua (13/06)
+- Bandeira do inglês trocada de Inglaterra (cruz de São Jorge) para **Reino
+  Unido / Union Jack** (padrão mundial), construída com clip de contraordem
+- Tema Light/Dark também virou **ícones clicáveis** (sol âmbar / lua índigo),
+  mesma lógica das bandeiras: dropdown `theme-select` oculto guarda valor +
+  persistência; clientside callbacks fazem clique→valor e valor→destaque
+- Classes unificadas: `.pref-icons`/`.pref-icon` (tema e idioma); imagens em
+  `.pref-flag-img` (retangular, com contorno) e `.pref-theme-img` (quadrado)
+- Novos assets: `assets/icons/sun.svg`, `assets/icons/moon.svg`
+
 ### Etapa 2 — Bandeiras reais no seletor de idioma (13/06)
 - Emoji de bandeira (🇧🇷🇺🇸🇪🇸) NÃO renderiza no Windows (vira "BR"/"US"/"ES") —
   trocado por SVGs reais em `assets/flags/` (br, en, es)

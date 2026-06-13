@@ -178,43 +178,52 @@ html, body {
   border-bottom: 1px solid var(--border);
 }
 
-/* idioma: bandeirinhas clicáveis (SVG real — emoji de bandeira não renderiza
-   no Windows). Sutis: pequenas, esmaecidas; a ativa ganha nitidez + anel */
-.lang-flags {
+/* tema (sol/lua) e idioma (bandeiras): ícones SVG clicáveis. Emoji de bandeira
+   não renderiza no Windows; SVG renderiza em qualquer SO. Sutis: pequenos,
+   esmaecidos; o ativo ganha nitidez + anel laranja. Tema e idioma em linhas
+   próprias, com leve separação */
+.pref-icons {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
-.lang-flag {
-  padding: 0;
+.pref-icon {
+  padding: 2px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   line-height: 0;
-  opacity: 0.45;
-  filter: grayscale(45%);
+  opacity: 0.42;
+  filter: grayscale(40%);
   transition: opacity 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
 
-.lang-flag:hover { opacity: 0.85; transform: translateY(-1px); }
+.pref-icon:hover { opacity: 0.85; transform: translateY(-1px); }
 
-.lang-flag.active {
+.pref-icon.active {
   opacity: 1;
   filter: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(255, 101, 0, 0.18);
 }
 
-.lang-flag-img {
+/* bandeira: retangular, com contorno fino para a de fundo branco (Reino Unido)
+   não sumir no tema claro */
+.pref-flag-img {
   width: 24px;
   height: 17px;
   border-radius: 3px;
   display: block;
-  /* contorno fino: dá borda à bandeira de fundo branco (Inglaterra) para ela
-     não sumir no tema claro */
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+/* ícone de tema: quadrado, sem contorno (glifo colorido sobre transparente) */
+.pref-theme-img {
+  width: 19px;
+  height: 19px;
+  display: block;
 }
 
 /* resumo + rodapé empurrados para a base (a nav não usa mais flex:1) */

@@ -48,15 +48,29 @@ def sidebar_prefs():
     (recriá-los dentro da navbar criaria loop e perderia o estado)."""
     return html.Div(
         [
+            # Tema: ícones sol/lua clicáveis (mesma lógica das bandeiras). O
+            # dropdown fica oculto só guardando valor + persistência; o
+            # clientside callback de tema segue lendo theme-select.value.
+            html.Div(
+                [
+                    html.Button(
+                        html.Img(src=get_asset_url(f'icons/{ico}'), alt=nome,
+                                 className='pref-theme-img'),
+                        id=f'theme-{val}', n_clicks=0, title=nome,
+                        className='pref-icon', **{'aria-label': nome},
+                    )
+                    for val, ico, nome in (('light', 'sun.svg', 'Tema claro'),
+                                           ('dark', 'moon.svg', 'Tema escuro'))
+                ],
+                className='pref-icons',
+            ),
             dcc.Dropdown(
                 id='theme-select',
-                options=[
-                    {'label': '☀️ Light', 'value': 'light'},
-                    {'label': '🌙 Dark', 'value': 'dark'},
-                ],
+                options=[{'label': 'light', 'value': 'light'},
+                         {'label': 'dark', 'value': 'dark'}],
                 value='light', clearable=False, searchable=False,
                 persistence=True, persistence_type='local',
-                style={'fontSize': '12px'},
+                style={'display': 'none'},
             ),
             # Idioma: bandeirinhas clicáveis (SVG renderiza em qualquer SO —
             # emoji de bandeira não aparece no Windows, vira "BR"/"EN"). O
@@ -66,13 +80,13 @@ def sidebar_prefs():
                 [
                     html.Button(
                         html.Img(src=get_asset_url(f'flags/{flag}'), alt=label,
-                                 className='lang-flag-img'),
+                                 className='pref-flag-img'),
                         id=f'lang-{code}', n_clicks=0, title=nome,
-                        className='lang-flag', **{'aria-label': nome},
+                        className='pref-icon', **{'aria-label': nome},
                     )
                     for code, flag, label, nome in _LANGS
                 ],
-                className='lang-flags',
+                className='pref-icons',
             ),
             dcc.Dropdown(
                 id='lang-select',

@@ -176,6 +176,48 @@ app.clientside_callback(
 )
 
 
+# ── Rolagem automática até o painel de detalhe ao clicar numa linha ──
+# O detalhe nasce ABAIXO da tabela; sem isso o usuário clica e não percebe que
+# algo abriu (precisava rolar à mão). Dispara quando o CONTEÚDO do detalhe é
+# renderizado (Input children) — não no clique cru: em páginas sem tabela
+# virtualizada a página ainda é curta no instante do clique e o scrollTo bate
+# no teto. Guarda em active_cell (não rola no placeholder/filtro sem seleção) e
+# só rola se o usuário ainda estiver ACIMA do detalhe (não dá solavanco quando
+# já se está lendo o detalhe e mexe num filtro). Desconta a barra sticky.
+for _tbl, _detail in (('clientes-table', 'cliente-detail'),
+                      ('produtos-table', 'produto-detail'),
+                      ('tend-table', 'tend-detail')):
+    app.clientside_callback(
+        """
+        function(children, active_cell) {
+            if (!active_cell) return window.dash_clientside.no_update;
+            function irAteDetalhe() {
+                var el = document.getElementById('%s');
+                if (!el) return;
+                var bar = document.getElementById('filter-bar');
+                var offset = (bar ? bar.offsetHeight : 0) + 14;
+                var target = el.getBoundingClientRect().top + window.pageYOffset - offset;
+                // só rola se ainda está acima do detalhe (não dá solavanco quando
+                // já se está lendo o detalhe e mexe num filtro)
+                if (window.pageYOffset < target - 40) {
+                    window.scrollTo({ top: target, behavior: 'smooth' });
+                }
+            }
+            // 1ª rolagem assim que o conteúdo aparece; 2ª corrige se os gráficos
+            // pesados acima (matriz/heatmap/rankings) reflowaram e empurraram o
+            // detalhe depois do scroll
+            setTimeout(irAteDetalhe, 90);
+            setTimeout(irAteDetalhe, 550);
+            return window.dash_clientside.no_update;
+        }
+        """ % _detail,
+        Output(_detail, 'style'),
+        Input(_detail, 'children'),
+        State(_tbl, 'active_cell'),
+        prevent_initial_call=True,
+    )
+
+
 # ── Traduz rótulos e placeholders da barra de filtros ──
 @callback(
     Output('f-lbl-filtros', 'children'),

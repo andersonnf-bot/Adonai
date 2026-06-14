@@ -57,6 +57,18 @@ Auditoria completa de código + inspeção visual página a página.
 - Tema **Light é o padrão de abertura** (Dark a um clique, escolha memorizada)
 - Para reverter qualquer item: `git revert` do commit correspondente
 
+### Etapa 2 — Rolagem automática até o detalhe ao clicar na tabela (14/06)
+- Clicar numa linha (Clientes, Produtos, Radar) agora **rola a página
+  suavemente até o painel de detalhe** que nasce abaixo — antes o usuário
+  clicava e não percebia que algo abriu (precisava rolar à mão)
+- Clientside callbacks por página, disparados quando o CONTEÚDO do detalhe
+  renderiza (Input children), não no clique cru — em páginas sem tabela
+  virtualizada a página ainda é curta no instante do clique e o scroll batia
+  no teto. Desconta a barra de filtros (sticky) para o detalhe não abrir
+  escondido. Guard: só rola se o usuário está acima do detalhe (não dá
+  solavanco ao trocar de linha/filtro já estando no detalhe); 2ª rolagem
+  corretiva ~550ms cobre reflow de gráficos pesados
+
 ### Etapa 2 — Top 10 no trilho + brilho da dica maior + rodapé menor (14/06)
 - Trilho da Visão Executiva: Top 5 → **Top 10** Clientes e Serviços, agora
   numerados 1–10 (`.rail-rank`) para leitura mais fácil da lista maior

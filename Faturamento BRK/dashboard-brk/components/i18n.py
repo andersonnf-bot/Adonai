@@ -19,8 +19,8 @@ T = {
     'nav_resumo':  ('RESUMO DA BASE', 'DATA SUMMARY', 'RESUMEN DE DATOS'),
     'nav_rec':     ('receita líquida', 'net revenue', 'ingresos netos'),
     'nav_grupos':  ('grupos econômicos', 'economic groups', 'grupos económicos'),
-    'rail_topcli': ('🏆 Top 5 Clientes do Período', '🏆 Top 5 Customers', '🏆 Top 5 Clientes del Período'),
-    'rail_topsrv': ('📦 Top 5 Serviços do Período', '📦 Top 5 Services', '📦 Top 5 Servicios del Período'),
+    'rail_topcli': ('🏆 Top 10 Clientes do Período', '🏆 Top 10 Customers', '🏆 Top 10 Clientes del Período'),
+    'rail_topsrv': ('📦 Top 10 Serviços do Período', '📦 Top 10 Services', '📦 Top 10 Servicios del Período'),
 
     # ── Barra de filtros ──
     'f_filtros':  ('FILTROS:', 'FILTERS:', 'FILTROS:'),

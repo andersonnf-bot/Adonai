@@ -438,14 +438,15 @@ def update_overview(start_date, end_date, anos, cliente, produto, valor_min, val
     else:
         tag = ''
 
-    # ── Trilho lateral: insights + top 5 clientes e serviços do período ──
+    # ── Trilho lateral: insights + top 10 clientes e serviços do período ──
     def _rail_top(titulo, df_rows, col_nome, col_val):
         linhas = []
         vmax = float(df_rows[col_val].max()) if len(df_rows) else 1.0
-        for _, rr in df_rows.head(5).iterrows():
+        for i, (_, rr) in enumerate(df_rows.head(10).iterrows(), start=1):
             v = float(rr[col_val])
             linhas.append(html.Div([
                 html.Div([
+                    html.Span(f'{i}', className='rail-rank'),
                     html.Span(str(rr[col_nome]).title(), className='rail-name',
                               title=str(rr[col_nome])),
                     html.Span(fmt_brl(v), className='rail-val'),

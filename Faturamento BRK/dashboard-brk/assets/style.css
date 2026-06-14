@@ -165,7 +165,7 @@ html, body {
 .sidebar-footer {
   padding: 11px 20px;
   border-top: 1px solid var(--border);
-  font-size: 9.5px;
+  font-size: 9px;
   color: var(--text-muted);
 }
 
@@ -236,11 +236,11 @@ html, body {
 .sidebar-foot-name {
   color: var(--text-secondary);
   font-weight: 500;
-  font-size: 9.5px;
+  font-size: 9px;
 }
 .sidebar-foot-role {
   color: var(--text-muted);
-  font-size: 8.5px;
+  font-size: 8px;
   margin-top: 1px;
 }
 
@@ -908,11 +908,22 @@ td.CalendarDay {
   font-size: 12px;
 }
 
+.rail-rank {
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 10px;
+  min-width: 15px;
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
 .rail-name {
   color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 
 .rail-val { color: var(--text-secondary); font-weight: 600; white-space: nowrap; }
@@ -986,7 +997,7 @@ td.CalendarDay {
 
 @keyframes hint-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 101, 0, 0); }
-  50%      { box-shadow: 0 0 0 4px rgba(255, 101, 0, 0.14); }
+  50%      { box-shadow: 0 0 0 9px rgba(255, 101, 0, 0.22); }
 }
 
 /* acessibilidade: sem animação para quem prefere movimento reduzido */
